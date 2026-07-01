@@ -1,0 +1,79 @@
+domestic_sources:
+  official_platforms:
+    - name: 巨量引擎
+      type: ad_platform_official
+    - name: 百度营销
+      type: ad_platform_official
+    - name: 腾讯广告
+      type: ad_platform_official
+    - name: 阿里妈妈
+      type: ad_platform_official
+    - name: 快手磁力引擎
+      type: ad_platform_official
+    - name: 小红书商业化
+      type: ad_platform_official
+
+  industry_media:
+    - name: 36Kr
+      type: industry_media
+    - name: 虎嗅
+      type: industry_media
+    - name: 晚点
+      type: industry_media
+    - name: 广告门
+      type: industry_media
+    - name: Morketing
+      type: industry_media
+    - name: 新榜
+      type: content_ecosystem
+      url: https://newrank.cn/user/login?platform=4
+      note: Login may be required. Do not store credentials in the agent.
+    - name: 见实
+      type: private_domain_and_growth_media
+
+  reports:
+    - name: QuestMobile
+      type: industry_report
+    - name: 艾瑞
+      type: industry_report
+    - name: 易观
+      type: industry_report
+    - name: 洞见研报
+      type: report_aggregator
+      url: https://www.djyanbao.com/index?channel=BaiduDJ
+      note: Login or membership may be required. Use manual download/export for MVP.
+    - name: 券商研报
+      type: research_report
+    - name: 上市公司财报
+      type: financial_report
+
+  content_platforms:
+    - 公众号
+    - 知乎
+    - B站
+    - 小红书
+    - 视频号
+    - 即刻
+
+overseas_sources:
+  ai_and_platform_official:
+    - OpenAI
+    - Google
+    - Meta
+    - Anthropic
+    - Perplexity
+
+  growth_and_strategy:
+    - a16z
+    - Lenny's Newsletter
+    - Stratechery
+    - Substack
+
+  social:
+    - X / Twitter
+    - LinkedIn
+
+primary_distribution_channels:
+  - Douyin
+  - WeChat Video Account
+

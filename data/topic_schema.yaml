@@ -1,0 +1,31 @@
+id:
+topic:
+target_audience:
+core_pain:
+core_judgement:
+recommended_platforms:
+  - wechat_public_account
+  - wechat_video_account
+  - douyin
+  - xiaohongshu
+  - zhihu
+  - bilibili
+  - x
+content_format:
+  - short_video
+  - long_article
+  - infographic
+  - weekly_digest
+  - case_breakdown
+title_candidates:
+evidence_needed:
+risk_notes:
+conversion_path:
+score:
+status:
+  - idea
+  - selected
+  - drafted
+  - reviewed
+  - published_manually
+  - archived

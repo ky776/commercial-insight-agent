@@ -1,0 +1,14 @@
+.DS_Store
+.env
+.env.*
+node_modules/
+dist/
+build/
+.cache/
+.tmp/
+*.log
+
+# Local research exports and private notes
+local/
+private/
+downloads/
