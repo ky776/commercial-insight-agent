@@ -202,6 +202,12 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); box-sha
 .provider-field { width: 190px; flex: none; }
 .generation-config { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-top: 22px; }
 .generation-config .brief-actions { margin-top: 0; }
+.video-generation-panel { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--line); }
+.video-generation-panel > .field-label { margin-top: 20px; }
+.video-config-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.video-config-grid label { min-width: 0; }
+.video-config-grid label > span { display: block; margin-bottom: 6px; color: var(--muted); font-size: 12px; }
+.video-job-meta { margin: 10px 0 0; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
 .generation-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 22px; margin-top: 18px; }
 .artifact-editor { min-height: 520px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
 .revision-box { margin-top: 14px; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
@@ -319,6 +325,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); box-sha
   .retrieved-evidence { padding: 18px 0 0; border-top: 1px solid var(--line); border-left: 0; }
   .provider-field { width: 100%; }
   .generation-config { align-items: stretch; flex-direction: column; }
+  .video-config-grid { grid-template-columns: 1fr 1fr; }
   .span-two { grid-column: auto; }
   .segmented { width: 100%; }
   .segmented label { flex: 1; }

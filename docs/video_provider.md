@@ -1,55 +1,52 @@
-# Video Generation Boundary
+# Seedance Video Generation
 
-## MVP Decision
+## Decision
 
-Do not generate complete videos in the first product version. Personal-brand trust depends on the founder's real voice, face, judgment, and delivery.
+Use ByteDance Seedance 2.0 through the Volcengine Ark API as the first video-generation provider. Seedance is downstream of content analysis and script approval; it is not used to understand uploaded videos.
 
-The MVP generates production support:
+The product still prioritizes the founder's real voice and judgment. Seedance should initially generate supplementary shots, product scenes, transitions, and visual demonstrations rather than replace the full personal-brand video.
 
-- Spoken script
-- Shot list
-- Captions
-- B-roll suggestions
-- Cover copy
-- Optional prompts for short supplementary clips
+## API Workflow
 
-## Provider Interface
+1. The user reviews the content draft and writes a dedicated visual prompt.
+2. The UI displays model, ratio, duration, and resolution before submission.
+3. A confirmation dialog warns that the API call may incur charges.
+4. The server calls `POST /api/v3/contents/generations/tasks` and stores the returned task ID.
+5. The user refreshes task status. When it succeeds, the server downloads the temporary result URL immediately.
 
-Future video providers must implement the same job contract:
-
-```yaml
-provider:
-model:
-prompt:
-reference_assets: []
-aspect_ratio: 9:16
-duration_seconds:
-quality:
-remote_job_id:
-status:
-estimated_cost:
-output_path:
-created_at:
-completed_at:
+```text
+local/
+├── video_jobs/<task-id>/job.json
+└── video_outputs/<task-id>/video.mp4
 ```
 
-The application must not expose provider-specific fields outside an advanced settings panel.
+Both directories are excluded from Git.
 
-## Selection Gate
+## Configuration
 
-Do not choose a default provider until a 20-prompt benchmark compares:
+```bash
+ARK_API_KEY=your-key
+SEEDANCE_VIDEO_GENERATION_MODEL=doubao-seedance-2-0-260128
+```
 
-- Chinese prompt understanding
-- Brand and product fidelity
-- Human motion and lip synchronization
-- Vertical-video composition
-- Generation time and failure rate
-- API availability and commercial rights
-- Cost per usable clip
+The default endpoint and model ID are defined in `config/model_providers.json`. Override the model through `.env` if the account uses a dedicated endpoint ID or a newer model version.
 
-Candidate APIs may include OpenAI Sora and Google Veo, plus domestic providers only after their official API access and commercial terms are verified.
+## Current Scope
+
+- Text-to-video submission.
+- Up to four HTTPS or `asset://` reference-image addresses.
+- Ratios: 9:16, 16:9, 1:1, 4:3, 3:4, 21:9, adaptive.
+- Durations exposed in the UI: 5, 10, and 15 seconds.
+- Resolutions: 480p, 720p, and 1080p.
+- Manual status refresh and automatic local download after success.
+
+Local image upload to Volcengine asset storage, prompt benchmarking, cost estimates, cancellation, callbacks, and multi-shot orchestration remain later work.
+
+## Review Boundary
+
+Before publishing, manually review brand fidelity, factual claims, generated people, logos, music and voice rights, platform AIGC labeling rules, and whether any prior-employer or customer information entered the prompt.
 
 Official references:
 
-- https://platform.openai.com/docs/api-reference/videos
-- https://docs.cloud.google.com/vertex-ai/generative-ai/docs/models/veo/3-0-generate-001
+- https://www.volcengine.com/docs/82379/1520757
+- https://api.volcengine.com/api-docs/view?action=GetContentsGenerationsTask&serviceCode=ark&version=2024-01-01

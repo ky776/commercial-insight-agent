@@ -36,6 +36,7 @@ The first version focuses on:
 - Structured brief routing to reduce repeated context and clarification
 - Local-first job, artifact, and media storage boundaries
 - API adapters for external language, reasoning, image, and video-understanding models
+- Seedance 2.0 API jobs for reviewed text-to-video generation and local result storage
 
 Out of scope for the first version:
 

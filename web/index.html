@@ -340,6 +340,55 @@
               </div>
             </aside>
           </div>
+
+          <div class="video-generation-panel" id="videoGenerationPanel">
+            <div class="section-heading">
+              <div>
+                <span class="eyebrow">字节 Seedance 2.0</span>
+                <h2>生成视频片段</h2>
+                <p>在内容稿审核后生成辅助画面。提交任务会产生火山方舟费用。</p>
+              </div>
+              <span class="budget-badge" id="videoJobStatus">尚未提交</span>
+            </div>
+            <label class="field-label" for="videoPromptInput">视频提示词</label>
+            <textarea id="videoPromptInput" rows="5" placeholder="描述主体、场景、动作、镜头、光线、声音和节奏。不要直接粘贴未经整理的整篇文章。"></textarea>
+            <div class="video-config-grid">
+              <label>
+                <span>画面比例</span>
+                <select id="videoRatioInput">
+                  <option value="9:16">9:16 竖屏</option>
+                  <option value="16:9">16:9 横屏</option>
+                  <option value="1:1">1:1 方形</option>
+                </select>
+              </label>
+              <label>
+                <span>时长</span>
+                <select id="videoDurationInput">
+                  <option value="5">5 秒</option>
+                  <option value="10">10 秒</option>
+                  <option value="15">15 秒</option>
+                </select>
+              </label>
+              <label>
+                <span>分辨率</span>
+                <select id="videoResolutionInput">
+                  <option value="720p">720p</option>
+                  <option value="1080p">1080p</option>
+                  <option value="480p">480p</option>
+                </select>
+              </label>
+              <label>
+                <span>参考图地址</span>
+                <textarea id="videoReferencesInput" rows="2" placeholder="HTTPS 或 asset://，多条换行"></textarea>
+              </label>
+            </div>
+            <div class="brief-actions">
+              <button class="button primary" id="createVideoButton" type="button">提交 Seedance</button>
+              <button class="button secondary" id="refreshVideoButton" type="button" disabled>刷新状态</button>
+              <a class="button secondary hidden" id="openVideoLink" href="#" target="_blank">打开本地视频</a>
+            </div>
+            <p class="video-job-meta" id="videoJobMeta">生成视频默认保存到 local/video_outputs/&lt;任务ID&gt;/video.mp4</p>
+          </div>
         </section>
       </main>
 
@@ -356,14 +405,14 @@
           <dl class="metrics">
             <div><dt>输入估算</dt><dd id="tokenEstimate">0 tokens</dd></div>
             <div><dt>检索范围</dt><dd id="retrievalEstimate">未生成</dd></div>
-            <div><dt>处理方式</dt><dd>本地预处理</dd></div>
+            <div><dt>处理方式</dt><dd>本地编排 + API 模型</dd></div>
           </dl>
         </section>
 
         <section class="risk-section">
           <div class="section-label">隐私与审核</div>
           <ul class="check-list" id="riskList">
-            <li class="ok">不自动上传素材</li>
+            <li class="ok">仅在明确选择后调用外部 API</li>
             <li class="ok">不自动发布内容</li>
             <li>生成后需人工核验事实</li>
           </ul>

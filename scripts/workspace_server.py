@@ -12,7 +12,7 @@ import shutil
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -32,6 +32,7 @@ from model_providers import ProviderError, analyze_material, provider_status  # 
 from social_collector import CollectionError, collect  # noqa: E402
 from social_service import add_watch_source, default_social_paths, radar_status  # noqa: E402
 from conversation_importer import import_export  # noqa: E402
+from video_generator import VideoGenerationError, create_seedance_job, get_video_path, refresh_seedance_job  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -112,13 +113,18 @@ class WorkspaceHandler(BaseHTTPRequestHandler):
             self._json(200, health_payload())
             return
         if path == "/api/artifacts":
-            from urllib.parse import parse_qs
-
             job_id = parse_qs(parsed.query).get("jobId", [""])[0]
             if not job_id:
                 self._json(400, {"ok": False, "error": "缺少 jobId"})
             else:
                 self._json(200, {"ok": True, "artifacts": list_artifacts(job_id)})
+            return
+        if path == "/api/video/file":
+            task_id = parse_qs(parsed.query).get("id", [""])[0]
+            try:
+                self._serve_file(get_video_path(task_id, ROOT), "video/mp4")
+            except VideoGenerationError as exc:
+                self._json(404, {"ok": False, "error": str(exc)})
             return
         if path == "/api/signals/status":
             config, local_dir = default_social_paths(ROOT)
@@ -168,6 +174,25 @@ class WorkspaceHandler(BaseHTTPRequestHandler):
                     root=ROOT,
                 )
                 self._json(200, {"ok": True, "result": result})
+                return
+            if path == "/api/video/generate":
+                privacy = str(payload.get("privacy", "internal"))
+                if privacy == "restricted" and not bool(payload.get("allowExternalModel", False)):
+                    raise VideoGenerationError("受限提示词默认禁止发送给 Seedance")
+                job = create_seedance_job(
+                    str(payload.get("prompt", "")),
+                    ratio=str(payload.get("ratio", "9:16")),
+                    duration=int(payload.get("duration", 5)),
+                    resolution=str(payload.get("resolution", "720p")),
+                    reference_urls=[str(item) for item in payload.get("referenceUrls", []) if str(item).strip()],
+                    confirmed_cost=bool(payload.get("confirmedCost", False)),
+                    root=ROOT,
+                )
+                self._json(200, {"ok": True, "job": job})
+                return
+            if path == "/api/video/status":
+                job = refresh_seedance_job(str(payload.get("id", "")), root=ROOT)
+                self._json(200, {"ok": True, "job": job})
                 return
             brief = payload.get("brief")
             if not isinstance(brief, dict):
@@ -232,6 +257,8 @@ class WorkspaceHandler(BaseHTTPRequestHandler):
         except GenerationError as exc:
             self._json(502, {"ok": False, "error": str(exc)})
         except ProviderError as exc:
+            self._json(502, {"ok": False, "error": str(exc)})
+        except VideoGenerationError as exc:
             self._json(502, {"ok": False, "error": str(exc)})
         except CollectionError as exc:
             self._json(502, {"ok": False, "error": str(exc)})
@@ -315,8 +342,11 @@ class WorkspaceHandler(BaseHTTPRequestHandler):
         if not target.is_file():
             self.send_error(404)
             return
-        body = target.read_bytes()
         content_type = mimetypes.guess_type(target.name)[0] or "application/octet-stream"
+        self._serve_file(target, content_type)
+
+    def _serve_file(self, target: Path, content_type: str) -> None:
+        body = target.read_bytes()
         self.send_response(200)
         self.send_header("Content-Type", f"{content_type}; charset=utf-8" if content_type.startswith("text/") else content_type)
         self.send_header("Content-Length", str(len(body)))

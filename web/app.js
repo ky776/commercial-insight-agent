@@ -69,6 +69,16 @@ const elements = {
   conversationImportStatus: document.querySelector("#conversationImportStatus"),
   conversationImportCount: document.querySelector("#conversationImportCount"),
   conversationImportResults: document.querySelector("#conversationImportResults"),
+  videoPrompt: document.querySelector("#videoPromptInput"),
+  videoRatio: document.querySelector("#videoRatioInput"),
+  videoDuration: document.querySelector("#videoDurationInput"),
+  videoResolution: document.querySelector("#videoResolutionInput"),
+  videoReferences: document.querySelector("#videoReferencesInput"),
+  createVideoButton: document.querySelector("#createVideoButton"),
+  refreshVideoButton: document.querySelector("#refreshVideoButton"),
+  videoJobStatus: document.querySelector("#videoJobStatus"),
+  videoJobMeta: document.querySelector("#videoJobMeta"),
+  openVideoLink: document.querySelector("#openVideoLink"),
 };
 
 const deliverableLabels = {
@@ -91,6 +101,8 @@ elements.approveArtifactButton.addEventListener("click", approveArtifact);
 elements.collectSignalsButton.addEventListener("click", collectSignals);
 elements.addSignalSourceButton.addEventListener("click", addSignalSource);
 elements.importConversationButton.addEventListener("click", importConversation);
+elements.createVideoButton.addEventListener("click", createSeedanceVideo);
+elements.refreshVideoButton.addEventListener("click", refreshSeedanceVideo);
 elements.conversationFileInput.addEventListener("change", event => {
   state.conversationFile = event.target.files[0] || null;
   elements.conversationFileName.textContent = state.conversationFile ? state.conversationFile.name : "选择 ChatGPT/Codex 导出文件";
@@ -533,6 +545,94 @@ function updateProviderOptions() {
       option.textContent = status ? `${status.label}${status.configured ? "" : "（未配置）"}` : option.textContent;
     });
   });
+  const seedance = statuses.get("seedance");
+  elements.createVideoButton.disabled = !seedance?.configured;
+  elements.createVideoButton.title = seedance?.configured ? "" : "请先在 .env 配置 ARK_API_KEY";
+}
+
+async function createSeedanceVideo() {
+  if (!state.service) {
+    showToast("本地服务未连接");
+    return;
+  }
+  const prompt = elements.videoPrompt.value.trim();
+  if (!prompt) {
+    showToast("请先填写视频提示词");
+    elements.videoPrompt.focus();
+    return;
+  }
+  const restricted = elements.privacy.value === "restricted";
+  const message = restricted
+    ? "将把受限视频提示词和参考图地址发送给火山方舟，并可能产生 Seedance 费用。确认提交本次任务吗？"
+    : "提交后会调用火山方舟 Seedance 并可能产生费用。确认提交本次任务吗？";
+  if (!window.confirm(message)) return;
+  elements.createVideoButton.disabled = true;
+  elements.videoJobStatus.textContent = "正在提交";
+  try {
+    const response = await fetch("/api/video/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt,
+        ratio: elements.videoRatio.value,
+        duration: Number(elements.videoDuration.value),
+        resolution: elements.videoResolution.value,
+        referenceUrls: splitLines(elements.videoReferences.value),
+        privacy: elements.privacy.value,
+        allowExternalModel: restricted,
+        confirmedCost: true,
+      }),
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) throw new Error(payload.error || "Seedance 任务提交失败");
+    state.videoJob = payload.job;
+    renderVideoJob(payload.job);
+    showToast("Seedance 任务已提交");
+  } catch (error) {
+    elements.videoJobStatus.textContent = "提交失败";
+    elements.videoJobMeta.textContent = error.message;
+    showToast(error.message);
+  } finally {
+    elements.createVideoButton.disabled = !(state.service.generation.providers || []).find(item => item.id === "seedance")?.configured;
+  }
+}
+
+async function refreshSeedanceVideo() {
+  if (!state.videoJob?.id) return;
+  elements.refreshVideoButton.disabled = true;
+  elements.videoJobStatus.textContent = "正在查询";
+  try {
+    const response = await fetch("/api/video/status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: state.videoJob.id }),
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) throw new Error(payload.error || "状态查询失败");
+    state.videoJob = payload.job;
+    renderVideoJob(payload.job);
+  } catch (error) {
+    elements.videoJobStatus.textContent = "查询失败";
+    elements.videoJobMeta.textContent = error.message;
+    showToast(error.message);
+  } finally {
+    elements.refreshVideoButton.disabled = !state.videoJob?.id;
+  }
+}
+
+function renderVideoJob(job) {
+  const labels = { queued: "排队中", running: "生成中", succeeded: "已完成", failed: "失败", cancelled: "已取消" };
+  elements.videoJobStatus.textContent = labels[job.status] || job.status;
+  elements.videoJobMeta.textContent = job.output_path
+    ? `任务 ${job.id} · 已保存 ${job.output_path}`
+    : `任务 ${job.id} · ${job.model}`;
+  elements.refreshVideoButton.disabled = false;
+  if (job.output_path) {
+    elements.openVideoLink.href = `/api/video/file?id=${encodeURIComponent(job.id)}`;
+    elements.openVideoLink.classList.remove("hidden");
+  } else {
+    elements.openVideoLink.classList.add("hidden");
+  }
 }
 
 async function runGeneration() {

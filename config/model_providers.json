@@ -49,6 +49,16 @@
         "video": "gemini-3.5-flash",
         "audio_video": "gemini-3.5-flash"
       }
+    },
+    "seedance": {
+      "label": "字节 Seedance 2.0",
+      "adapter": "ark_video_generation",
+      "base_url": "https://ark.cn-beijing.volces.com/api/v3/contents/generations/tasks",
+      "api_key_env": "ARK_API_KEY",
+      "capabilities": ["video_generation"],
+      "models": {
+        "video_generation": "doubao-seedance-2-0-260128"
+      }
     }
   },
   "routing": {
@@ -56,7 +66,8 @@
     "reasoning": "deepseek",
     "image": "dashscope",
     "video": "dashscope",
-    "audio_video": "dashscope"
+    "audio_video": "dashscope",
+    "video_generation": "seedance"
   },
   "limits": {
     "inline_media_bytes": 20000000
