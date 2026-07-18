@@ -35,6 +35,7 @@ The first version focuses on:
 - Obsidian knowledge-base retrieval with auditable note citations
 - Structured brief routing to reduce repeated context and clarification
 - Local-first job, artifact, and media storage boundaries
+- API adapters for external language, reasoning, image, and video-understanding models
 
 Out of scope for the first version:
 
@@ -131,6 +132,9 @@ The local workspace also exposes this pipeline through the `信号雷达` naviga
 - `docs/ui_spec.md`: local workbench information architecture and visual rules
 - `docs/global_brief_router.md`: install the token-saving brief router globally
 - `docs/global_knowledge_system.md`: conversation knowledge, four-project manuals, batch material ingestion, and privacy boundaries
+- `docs/material_ingestion.md`: local file storage, hashing, parse cache, and current media support
+- `docs/model_provider_api.md`: API provider routing, key setup, limits, and privacy gates
+- `docs/conversation_import_workflow.md`: import ChatGPT/Codex exports into the local Obsidian review queue
 
 ## Local Workspace Prototype
 
@@ -141,6 +145,8 @@ Start the local workspace service to use Obsidian retrieval and content generati
 ```
 
 Then open `http://127.0.0.1:4173`. The workflow supports editable briefs, cited local retrieval, evidence-only drafts, optional model generation, scoped revisions, version history, human approval, Obsidian write-back, and Markdown export. See `docs/local_workspace_service.md` for privacy and storage boundaries.
+
+To enable external models, copy `.env.example` to `.env`, add only the provider keys you need, and restart the workspace. Keys and raw local materials are ignored by Git.
 
 ## Primary Channels
 

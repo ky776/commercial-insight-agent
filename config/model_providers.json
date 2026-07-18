@@ -1,0 +1,64 @@
+{
+  "providers": {
+    "openai": {
+      "label": "OpenAI",
+      "adapter": "openai_responses",
+      "base_url": "https://api.openai.com/v1/responses",
+      "api_key_env": "OPENAI_API_KEY",
+      "capabilities": ["text", "reasoning"],
+      "models": {
+        "text": "gpt-5.6-luna",
+        "reasoning": "gpt-5.6-luna"
+      }
+    },
+    "deepseek": {
+      "label": "DeepSeek",
+      "adapter": "openai_chat",
+      "base_url": "https://api.deepseek.com/v1",
+      "api_key_env": "DEEPSEEK_API_KEY",
+      "capabilities": ["text", "reasoning"],
+      "models": {
+        "text": "deepseek-v4-flash",
+        "reasoning": "deepseek-v4-pro"
+      }
+    },
+    "dashscope": {
+      "label": "阿里云百炼 / 通义千问",
+      "adapter": "openai_chat_multimodal",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "api_key_env": "DASHSCOPE_API_KEY",
+      "capabilities": ["text", "reasoning", "image", "video", "audio_video"],
+      "models": {
+        "text": "qwen-plus",
+        "reasoning": "qwen3.7-plus",
+        "image": "qwen3.7-plus",
+        "video": "qwen3.7-plus",
+        "audio_video": "qwen3.5-omni-flash"
+      }
+    },
+    "gemini": {
+      "label": "Google Gemini",
+      "adapter": "gemini_interactions",
+      "base_url": "https://generativelanguage.googleapis.com/v1beta/interactions",
+      "api_key_env": "GEMINI_API_KEY",
+      "capabilities": ["text", "reasoning", "image", "video", "audio_video"],
+      "models": {
+        "text": "gemini-3.5-flash",
+        "reasoning": "gemini-3.5-flash",
+        "image": "gemini-3.5-flash",
+        "video": "gemini-3.5-flash",
+        "audio_video": "gemini-3.5-flash"
+      }
+    }
+  },
+  "routing": {
+    "text": "openai",
+    "reasoning": "deepseek",
+    "image": "dashscope",
+    "video": "dashscope",
+    "audio_video": "dashscope"
+  },
+  "limits": {
+    "inline_media_bytes": 20000000
+  }
+}

@@ -240,6 +240,34 @@ def call_openai(
     )
 
 
+def call_external_provider(
+    brief: dict,
+    evidence: list[dict],
+    *,
+    provider: str,
+    capability: str = "reasoning",
+    transport: Callable | None = None,
+) -> GenerationResult:
+    from model_providers import ProviderError, call_text_model
+
+    try:
+        response = call_text_model(
+            build_instructions(infer_deliverable_type(brief)),
+            build_input(brief, evidence),
+            provider_id=provider,
+            capability=capability,
+            transport=transport,
+        )
+    except ProviderError as exc:
+        raise GenerationError(str(exc)) from exc
+    return GenerationResult(
+        markdown=response["text"],
+        provider=response["provider"],
+        model=response["model"],
+        usage=response["usage"],
+    )
+
+
 def _openai_request(
     *,
     instructions: str,
@@ -321,11 +349,15 @@ def generate(
 ) -> GenerationResult:
     privacy = brief.get("privacy", "internal")
     can_use_cloud = privacy != "restricted" or allow_external_model
-    if provider == "openai" and not can_use_cloud:
+    external_providers = {"openai", "deepseek", "dashscope", "gemini"}
+    if provider in external_providers and not can_use_cloud:
         raise GenerationError("受限资料默认禁止发送给外部模型")
     if provider == "openai" or (provider == "auto" and can_use_cloud and os.environ.get("OPENAI_API_KEY")):
         cloud_evidence = [item for item in evidence if item.get("sensitivity") != "restricted"]
         return call_openai(brief, cloud_evidence, transport=transport)
+    if provider in {"deepseek", "dashscope", "gemini"}:
+        cloud_evidence = [item for item in evidence if item.get("sensitivity") != "restricted"]
+        return call_external_provider(brief, cloud_evidence, provider=provider, transport=transport)
     return GenerationResult(
         markdown=evidence_only_draft(brief, evidence),
         provider="evidence",

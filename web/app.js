@@ -1,5 +1,5 @@
 const STORAGE_KEY = "commercial-insight-founder-jobs-v1";
-const state = { files: [], extractedText: [], currentBrief: null, currentView: "inbox", jobs: loadJobs(), service: null, lastArtifact: null };
+const state = { files: [], extractedText: [], materialResults: {}, captureId: createId(), conversationFile: null, currentBrief: null, currentView: "inbox", jobs: loadJobs(), service: null, lastArtifact: null };
 
 const elements = {
   request: document.querySelector("#requestInput"),
@@ -10,6 +10,7 @@ const elements = {
   constraints: document.querySelector("#constraintsInput"),
   fileInput: document.querySelector("#fileInput"),
   fileList: document.querySelector("#fileList"),
+  materialProvider: document.querySelector("#materialProviderInput"),
   dropZone: document.querySelector("#dropZone"),
   briefSection: document.querySelector("#briefSection"),
   stateBadge: document.querySelector("#stateBadge"),
@@ -59,6 +60,15 @@ const elements = {
   signalSourceValue: document.querySelector("#signalSourceValue"),
   collectSignalsButton: document.querySelector("#collectSignalsButton"),
   addSignalSourceButton: document.querySelector("#addSignalSourceButton"),
+  knowledgeSystemSection: document.querySelector("#knowledgeSystemSection"),
+  conversationFileInput: document.querySelector("#conversationFileInput"),
+  conversationFileName: document.querySelector("#conversationFileName"),
+  conversationProject: document.querySelector("#conversationProjectInput"),
+  conversationSensitivity: document.querySelector("#conversationSensitivityInput"),
+  importConversationButton: document.querySelector("#importConversationButton"),
+  conversationImportStatus: document.querySelector("#conversationImportStatus"),
+  conversationImportCount: document.querySelector("#conversationImportCount"),
+  conversationImportResults: document.querySelector("#conversationImportResults"),
 };
 
 const deliverableLabels = {
@@ -80,10 +90,19 @@ elements.saveArtifactButton.addEventListener("click", saveArtifactVersion);
 elements.approveArtifactButton.addEventListener("click", approveArtifact);
 elements.collectSignalsButton.addEventListener("click", collectSignals);
 elements.addSignalSourceButton.addEventListener("click", addSignalSource);
+elements.importConversationButton.addEventListener("click", importConversation);
+elements.conversationFileInput.addEventListener("change", event => {
+  state.conversationFile = event.target.files[0] || null;
+  elements.conversationFileName.textContent = state.conversationFile ? state.conversationFile.name : "选择 ChatGPT/Codex 导出文件";
+});
 document.querySelector("#resetButton").addEventListener("click", () => elements.briefSection.classList.add("hidden"));
 document.querySelector("#newJobButton").addEventListener("click", resetWorkspace);
 document.querySelectorAll(".nav-item").forEach(button => button.addEventListener("click", () => changeView(button)));
 elements.fileInput.addEventListener("change", event => handleFiles([...event.target.files]));
+elements.fileList.addEventListener("click", event => {
+  const button = event.target.closest("[data-analyze-material]");
+  if (button) analyzeMaterial(button.dataset.analyzeMaterial);
+});
 
 ["dragenter", "dragover"].forEach(name => elements.dropZone.addEventListener(name, event => {
   event.preventDefault();
@@ -96,7 +115,10 @@ elements.fileInput.addEventListener("change", event => handleFiles([...event.tar
 elements.dropZone.addEventListener("drop", event => handleFiles([...event.dataTransfer.files]));
 
 [elements.request, elements.url, elements.constraints].forEach(input => input.addEventListener("input", updateContextEstimate));
-elements.privacy.addEventListener("change", updatePrivacyState);
+elements.privacy.addEventListener("change", () => {
+  updatePrivacyState();
+  refreshMaterialPrivacy();
+});
 
 function selectedMode() {
   return document.querySelector('input[name="mode"]:checked').value;
@@ -104,19 +126,67 @@ function selectedMode() {
 
 async function handleFiles(files) {
   state.files = deduplicateFiles([...state.files, ...files]);
-  state.extractedText = [];
+  renderFiles();
   for (const file of state.files) {
+    const key = fileKey(file);
+    if (state.materialResults[key]?.state === "ready") continue;
+    await uploadMaterial(file);
+  }
+  updateContextEstimate();
+}
+
+async function uploadMaterial(file) {
+  const key = fileKey(file);
+  state.materialResults[key] = { state: "uploading", label: "正在本地保存" };
+  renderFiles();
+  if (!state.service) {
     if (isReadableText(file) && file.size <= 2_000_000) {
-      try {
-        const text = await file.text();
-        state.extractedText.push({ name: file.name, text: text.slice(0, 12000) });
-      } catch (_) {
-        state.extractedText.push({ name: file.name, text: "" });
-      }
+      const text = await file.text();
+      state.materialResults[key] = { state: "ready", label: "浏览器文本", extractedText: text.slice(0, 50000), material: null };
+      syncExtractedText();
+    } else {
+      state.materialResults[key] = { state: "failed", label: "请通过本地服务打开" };
     }
+    renderFiles();
+    return;
+  }
+  if (file.size > (state.service.materials?.maxUploadBytes || 100_000_000)) {
+    state.materialResults[key] = { state: "failed", label: "超过 100 MB" };
+    renderFiles();
+    return;
+  }
+  const form = new FormData();
+  form.append("file", file, file.name);
+  form.append("jobId", state.captureId);
+  form.append("privacy", elements.privacy.value);
+  try {
+    const response = await fetch("/api/materials/upload", { method: "POST", body: form });
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) throw new Error(payload.error || "素材解析失败");
+    const material = payload.material;
+    const status = material.parse_status === "failed" ? "failed" : "ready";
+    const label = material.parse_status === "parsed"
+      ? `${material.cached ? "缓存命中" : "已解析"}`
+      : material.parse_status === "stored" ? "待模型理解" : material.parse_status === "partial" ? "部分解析" : "解析失败";
+    state.materialResults[key] = { state: status, label, extractedText: material.extracted_text || "", material };
+    syncExtractedText();
+  } catch (error) {
+    state.materialResults[key] = { state: "failed", label: error.message };
   }
   renderFiles();
+}
+
+async function refreshMaterialPrivacy() {
+  if (!state.files.length || !state.service) return;
+  for (const file of state.files) await uploadMaterial(file);
   updateContextEstimate();
+}
+
+function syncExtractedText() {
+  state.extractedText = state.files.map(file => {
+    const result = state.materialResults[fileKey(file)];
+    return result?.extractedText ? { name: file.name, text: result.extractedText } : null;
+  }).filter(Boolean);
 }
 
 function deduplicateFiles(files) {
@@ -130,21 +200,73 @@ function deduplicateFiles(files) {
 }
 
 function isReadableText(file) {
-  return file.type.startsWith("text/") || /\.(md|txt|json|csv)$/i.test(file.name);
+  return file.type.startsWith("text/") || /\.(md|txt|json|csv|yaml|yml)$/i.test(file.name);
 }
+
+function fileKey(file) { return `${file.name}:${file.size}:${file.lastModified}`; }
 
 function renderFiles() {
   elements.fileList.innerHTML = state.files.map(file => `
-    <div class="file-row"><span>${escapeHtml(file.name)}</span><small>${formatBytes(file.size)}</small></div>
+    <div class="file-row">
+      <span>${escapeHtml(file.name)}</span>
+      <div class="file-row-actions">
+        <small class="file-state ${escapeHtml(state.materialResults[fileKey(file)]?.state || "pending")}" title="${escapeHtml((state.materialResults[fileKey(file)]?.material?.warnings || []).join("；"))}">${escapeHtml(state.materialResults[fileKey(file)]?.label || "等待处理")} · ${formatBytes(file.size)}</small>
+        ${state.materialResults[fileKey(file)]?.material?.parse_status === "stored" ? `<button class="mini-button" type="button" data-analyze-material="${escapeHtml(fileKey(file))}">模型理解</button>` : ""}
+      </div>
+    </div>
   `).join("");
   renderEvidence();
 }
 
+async function analyzeMaterial(key) {
+  const entry = state.materialResults[key];
+  if (!entry?.material || !state.service) return;
+  const provider = elements.materialProvider.value;
+  const restricted = elements.privacy.value === "restricted";
+  const allowExternalModel = restricted
+    ? window.confirm("这会把当前受限原文件发送给所选外部模型。只授权本次分析，确认继续吗？")
+    : true;
+  if (!allowExternalModel) return;
+  entry.state = "uploading";
+  entry.label = "模型分析中";
+  renderFiles();
+  try {
+    const response = await fetch("/api/materials/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contentHash: entry.material.content_hash,
+        provider,
+        allowExternalModel,
+      }),
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) throw new Error(payload.error || "模型理解失败");
+    entry.state = "ready";
+    entry.label = `${payload.result.cached ? "缓存命中" : "已理解"} · ${payload.result.model}`;
+    entry.extractedText = payload.result.markdown;
+    entry.analysis = payload.result;
+    syncExtractedText();
+    showToast("素材理解结果已进入当前任务上下文");
+  } catch (error) {
+    entry.state = "failed";
+    entry.label = error.message;
+    showToast(error.message);
+  }
+  renderFiles();
+  updateContextEstimate();
+}
+
 function generateBrief() {
   const requestText = elements.request.value.trim();
-  const sourceText = state.extractedText.map(item => item.text).join("\n");
+  const sourceText = state.extractedText.map(item => item.text.slice(0, 12000)).join("\n");
   const combinedText = [requestText, sourceText].filter(Boolean).join("\n");
   const url = elements.url.value.trim();
+
+  if (Object.values(state.materialResults).some(result => result.state === "uploading")) {
+    showToast("请等待素材解析完成");
+    return;
+  }
 
   if (url && !elements.url.checkValidity()) {
     showToast("网页链接格式不正确");
@@ -297,15 +419,24 @@ function changeView(button) {
     else item.removeAttribute("aria-current");
   });
   const signalView = state.currentView === "signals";
+  const knowledgeView = state.currentView === "knowledge";
+  const alternateView = signalView || knowledgeView;
   elements.signalSection.classList.toggle("hidden", !signalView);
-  document.querySelector(".stepper").classList.toggle("hidden", signalView);
-  elements.request.closest(".input-section").classList.toggle("hidden", signalView);
+  elements.knowledgeSystemSection.classList.toggle("hidden", !knowledgeView);
+  document.querySelector(".stepper").classList.toggle("hidden", alternateView);
+  elements.request.closest(".input-section").classList.toggle("hidden", alternateView);
   if (signalView) {
     elements.briefSection.classList.add("hidden");
     elements.generationSection.classList.add("hidden");
     elements.workspaceTitle.textContent = "公开信号雷达";
     elements.stateBadge.textContent = "公开来源";
     loadSignalRadar();
+  } else if (knowledgeView) {
+    elements.briefSection.classList.add("hidden");
+    elements.generationSection.classList.add("hidden");
+    elements.workspaceTitle.textContent = "全局知识系统";
+    elements.stateBadge.textContent = "本地优先";
+    loadConversationImports();
   } else {
     if (state.currentBrief) elements.briefSection.classList.remove("hidden");
     if (state.lastArtifact) elements.generationSection.classList.remove("hidden");
@@ -352,6 +483,8 @@ function loadJob(jobId) {
 function resetWorkspace() {
   state.files = [];
   state.extractedText = [];
+  state.materialResults = {};
+  state.captureId = createId();
   state.currentBrief = null;
   elements.request.value = "";
   elements.url.value = "";
@@ -376,16 +509,30 @@ async function checkService() {
     const response = await fetch("/api/health", { cache: "no-store" });
     if (!response.ok) throw new Error("服务不可用");
     state.service = await response.json();
+    updateProviderOptions();
     elements.serviceStatus.className = "local-status connected";
     elements.serviceStatusText.textContent = `本地服务 · ${state.service.knowledge.notes} 条笔记`;
-    elements.generationMeta.textContent = state.service.generation.openaiConfigured
-      ? `已连接知识库；自动模式使用 ${state.service.generation.defaultModel}，受限资料保持本地。`
-      : "已连接知识库；未配置模型时自动使用本地证据模式。";
+    const configured = (state.service.generation.providers || []).filter(item => item.configured).map(item => item.label);
+    elements.generationMeta.textContent = configured.length
+      ? `已连接知识库与 ${configured.join("、")}；受限资料需单次授权。`
+      : "已连接知识库；配置 API Key 后可使用外部语言、推理和视频理解模型。";
   } catch (_) {
     state.service = null;
     elements.serviceStatus.className = "local-status disconnected";
     elements.serviceStatusText.textContent = "离线页面";
   }
+}
+
+function updateProviderOptions() {
+  const statuses = new Map((state.service?.generation?.providers || []).map(item => [item.id, item]));
+  [elements.provider, elements.materialProvider].forEach(select => {
+    [...select.options].forEach(option => {
+      if (["auto", "evidence"].includes(option.value)) return;
+      const status = statuses.get(option.value);
+      option.disabled = !status?.configured;
+      option.textContent = status ? `${status.label}${status.configured ? "" : "（未配置）"}` : option.textContent;
+    });
+  });
 }
 
 async function runGeneration() {
@@ -400,10 +547,11 @@ async function runGeneration() {
     elements.briefQuestions.focus();
     return;
   }
-  const allowExternalModel = brief.privacy === "restricted" && elements.provider.value === "openai"
+  const externalProvider = !["auto", "evidence"].includes(elements.provider.value);
+  const allowExternalModel = brief.privacy === "restricted" && externalProvider
     ? window.confirm("这会把受限 Brief 和检索证据片段发送给外部模型，确认继续吗？")
     : false;
-  if (brief.privacy === "restricted" && elements.provider.value === "openai" && !allowExternalModel) return;
+  if (brief.privacy === "restricted" && externalProvider && !allowExternalModel) return;
 
   setGenerationBusy(true);
   elements.generationSection.classList.remove("hidden");
@@ -424,7 +572,7 @@ async function runGeneration() {
     state.currentBrief = { ...brief, state: "generated" };
     state.lastArtifact = payload.result;
     elements.artifactEditor.value = payload.result.markdown;
-    const mode = payload.result.provider === "openai" ? payload.result.model : "本地证据模式";
+    const mode = payload.result.provider === "evidence" ? "本地证据模式" : `${payload.result.provider} / ${payload.result.model}`;
     elements.generationMeta.textContent = `已生成 · ${mode} · 本地版本：${payload.result.artifact_path}`;
     renderRetrievedEvidence(payload.evidence);
     elements.stateBadge.textContent = "待人工审核";
@@ -565,6 +713,69 @@ function selectArtifact(artifact) {
   elements.artifactEditor.value = artifact.markdown;
   state.lastArtifact = artifact;
   elements.generationMeta.textContent = `已载入 v${artifact.version} · ${artifact.artifact_path}`;
+}
+
+async function loadConversationImports() {
+  if (!state.service) {
+    showToast("请先通过本地服务地址打开工作台");
+    return;
+  }
+  try {
+    const response = await fetch("/api/conversations/status", { cache: "no-store" });
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) throw new Error(payload.error || "读取导入记录失败");
+    renderConversationImports(payload.imports || []);
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+async function importConversation() {
+  if (!state.service) {
+    showToast("本地服务未连接");
+    return;
+  }
+  if (!state.conversationFile) {
+    showToast("请先选择会话导出文件");
+    return;
+  }
+  const form = new FormData();
+  form.append("file", state.conversationFile);
+  form.append("project", elements.conversationProject.value);
+  form.append("sensitivity", elements.conversationSensitivity.value);
+  elements.importConversationButton.disabled = true;
+  elements.importConversationButton.textContent = "正在本地解析…";
+  elements.conversationImportStatus.textContent = "正在归档原文件、提取问题并生成 Obsidian 审核笔记";
+  try {
+    const response = await fetch("/api/conversations/import", { method: "POST", body: form });
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) throw new Error(payload.error || "导入失败");
+    renderConversationImports(payload.imports || []);
+    elements.conversationImportStatus.textContent = payload.report.duplicate
+      ? "文件内容与历史导入一致，已复用原有结果"
+      : `完成：${payload.report.conversations} 个会话，${payload.report.questions} 个问题`;
+    state.conversationFile = null;
+    elements.conversationFileInput.value = "";
+    elements.conversationFileName.textContent = "选择 ChatGPT/Codex 导出文件";
+    showToast(payload.report.duplicate ? "该导出已处理过" : "会话知识已进入审核队列");
+  } catch (error) {
+    elements.conversationImportStatus.textContent = error.message;
+    showToast(error.message);
+  } finally {
+    elements.importConversationButton.disabled = false;
+    elements.importConversationButton.textContent = "导入并生成审核笔记";
+  }
+}
+
+function renderConversationImports(imports) {
+  elements.conversationImportCount.textContent = `${imports.length} 次导入`;
+  elements.conversationImportResults.innerHTML = imports.length ? imports.map(item => `
+    <div class="conversation-import-item">
+      <strong>${escapeHtml(item.platform || "unknown")} · ${item.conversations || 0} 个会话 · ${item.questions || 0} 个问题</strong>
+      <span>来源：${escapeHtml(item.source || "")}</span>
+      <span>审核笔记：${escapeHtml((item.notes || []).slice(0, 3).join("；") || "未生成")}</span>
+    </div>
+  `).join("") : '<p class="empty-copy">尚无会话导入记录</p>';
 }
 
 async function loadSignalRadar() {
@@ -763,6 +974,7 @@ function deriveBudget(text, fileCount, mode) {
 }
 
 function splitItems(value) { return value.split(/[；;\n]/).map(item => item.trim()).filter(Boolean); }
+function createId() { return crypto.randomUUID ? crypto.randomUUID() : `capture-${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 function splitLines(value) { return value.split("\n").map(item => item.trim()).filter(Boolean); }
 function asMarkdownList(items) { return items.map(item => `- ${item}`).join("\n"); }
 function safeFileName(value) { return value.replace(/[\\/:*?"<>|]/g, "-").slice(0, 60) || "task-brief"; }

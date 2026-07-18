@@ -113,11 +113,61 @@
           <div id="signalErrorList" class="signal-error-list"></div>
         </section>
 
+        <section class="knowledge-system-section hidden" id="knowledgeSystemSection" aria-labelledby="knowledgeSystemHeading">
+          <div class="section-heading">
+            <div>
+              <span class="eyebrow">全局知识系统</span>
+              <h2 id="knowledgeSystemHeading">会话知识导入</h2>
+              <p>从 ChatGPT 或 Codex 导出文件生成待审核问题卡；原始文件归档在本机私有区。</p>
+            </div>
+            <span class="budget-badge" id="conversationImportCount">0 次导入</span>
+          </div>
+
+          <div class="conversation-import-form">
+            <label class="conversation-file-picker" for="conversationFileInput">
+              <input id="conversationFileInput" type="file" accept=".zip,.json,.jsonl,.md,.txt" />
+              <strong id="conversationFileName">选择 ChatGPT/Codex 导出文件</strong>
+              <span>支持 ZIP、JSON、JSONL、Markdown、TXT，最大 250 MB</span>
+            </label>
+            <div class="conversation-import-options">
+              <label>
+                <span>关联项目</span>
+                <select id="conversationProjectInput">
+                  <option value="">暂不关联</option>
+                  <option value="project-a">A 项目</option>
+                  <option value="project-b">B 项目</option>
+                  <option value="project-c">C 项目</option>
+                  <option value="project-d">D 项目</option>
+                </select>
+              </label>
+              <label>
+                <span>敏感级别</span>
+                <select id="conversationSensitivityInput">
+                  <option value="internal">内部</option>
+                  <option value="restricted">受限/公司材料</option>
+                  <option value="public">公开</option>
+                </select>
+              </label>
+            </div>
+          </div>
+          <div class="primary-actions">
+            <button class="button primary" id="importConversationButton" type="button">导入并生成审核笔记</button>
+            <span class="action-note" id="conversationImportStatus">不会自动确认结论或学习偏好</span>
+          </div>
+
+          <div class="conversation-results-heading">
+            <h3>最近导入</h3>
+          </div>
+          <div id="conversationImportResults" class="conversation-import-results">
+            <p class="empty-copy">尚无会话导入记录</p>
+          </div>
+        </section>
+
         <section class="input-section" aria-labelledby="inputHeading">
           <div class="section-heading">
             <div>
               <h2 id="inputHeading">输入素材</h2>
-              <p>直接描述任务，也可以拖入文件。素材只在当前浏览器中读取。</p>
+              <p>直接描述任务，也可以拖入文件。原文件本地保存，理解结果由你选择的 API 模型生成。</p>
             </div>
             <fieldset class="segmented" aria-label="任务模式">
               <label><input type="radio" name="mode" value="capture" /><span>收集</span></label>
@@ -132,9 +182,9 @@
 
           <div class="source-row">
             <label class="drop-zone" id="dropZone" for="fileInput">
-              <input id="fileInput" type="file" multiple accept=".md,.txt,.json,.csv,.pdf" />
+              <input id="fileInput" type="file" multiple accept=".md,.txt,.json,.csv,.yaml,.yml,.pdf,.png,.jpg,.jpeg,.gif,.webp,.heic,.mp3,.wav,.m4a,.aac,.flac,.mp4,.mov,.mkv,.webm" />
               <strong>选择文件或拖到这里</strong>
-              <span>当前直接解析 Markdown、TXT、JSON、CSV；PDF 先进入本地知识库</span>
+              <span>本地保存并去重；图片与音视频不调用本机模型，最大 100 MB</span>
             </label>
             <div class="source-fields">
               <label>
@@ -147,6 +197,14 @@
                   <option value="internal" selected>内部资料</option>
                   <option value="public">公开资料</option>
                   <option value="restricted">受限资料</option>
+                </select>
+              </label>
+              <label>
+                <span>素材理解模型</span>
+                <select id="materialProviderInput">
+                  <option value="auto">自动选择</option>
+                  <option value="dashscope">通义千问</option>
+                  <option value="gemini">Google Gemini</option>
                 </select>
               </label>
             </div>
@@ -230,7 +288,10 @@
               <select id="providerInput">
                 <option value="auto">自动选择</option>
                 <option value="evidence">仅本地证据</option>
-                <option value="openai">云端推理模型</option>
+                <option value="openai">OpenAI</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="dashscope">通义千问</option>
+                <option value="gemini">Google Gemini</option>
               </select>
             </label>
             <div class="brief-actions">

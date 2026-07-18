@@ -4,9 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import cgi
 import json
 import mimetypes
 import os
+import shutil
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -25,13 +27,29 @@ from content_generator import (  # noqa: E402
     save_artifact,
 )
 from knowledge_store import default_paths, index_status, rebuild_index, search_index  # noqa: E402
+from material_processor import MaterialError, ingest_stream  # noqa: E402
+from model_providers import ProviderError, analyze_material, provider_status  # noqa: E402
 from social_collector import CollectionError, collect  # noqa: E402
 from social_service import add_watch_source, default_social_paths, radar_status  # noqa: E402
+from conversation_importer import import_export  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[1]
 WEB_ROOT = ROOT / "web"
 MAX_BODY = 1_000_000
+MAX_UPLOAD_BODY = 250_000_000
+MAX_MATERIAL_UPLOAD = 100_000_000
+
+
+def conversation_import_status() -> list[dict]:
+    manifests = sorted((ROOT / "local" / "conversations").glob("*/manifest.json"), key=lambda path: path.stat().st_mtime, reverse=True)
+    results = []
+    for path in manifests[:20]:
+        try:
+            results.append(json.loads(path.read_text(encoding="utf-8")))
+        except (OSError, ValueError):
+            continue
+    return results
 
 
 def retrieve_for_brief(brief: dict, top_k: int = 8) -> list[dict]:
@@ -54,6 +72,14 @@ def health_payload() -> dict:
             "openaiConfigured": bool(os.environ.get("OPENAI_API_KEY")),
             "defaultModel": os.environ.get("OPENAI_MODEL", "gpt-5.6-luna"),
             "evidenceMode": True,
+            "providers": provider_status(ROOT),
+        },
+        "materials": {
+            "maxUploadBytes": MAX_MATERIAL_UPLOAD,
+            "localStorage": True,
+            "localSemanticModels": False,
+            "externalApiAnalysis": True,
+            "inlineApiBytes": 20_000_000,
         },
     }
 
@@ -98,11 +124,20 @@ class WorkspaceHandler(BaseHTTPRequestHandler):
             config, local_dir = default_social_paths(ROOT)
             self._json(200, {"ok": True, **radar_status(config, local_dir)})
             return
+        if path == "/api/conversations/status":
+            self._json(200, {"ok": True, "imports": conversation_import_status()})
+            return
         self._serve_static(path)
 
     def do_POST(self) -> None:  # noqa: N802
         path = urlparse(self.path).path
         try:
+            if path == "/api/conversations/import":
+                self._import_conversation()
+                return
+            if path == "/api/materials/upload":
+                self._upload_material()
+                return
             payload = self._body()
             if path == "/api/reindex":
                 vault, database = default_paths()
@@ -119,6 +154,20 @@ class WorkspaceHandler(BaseHTTPRequestHandler):
                 report = collect(config, vault, local_dir)
                 knowledge = rebuild_index(vault, database)
                 self._json(200, {"ok": True, "report": report, "knowledge": knowledge, **radar_status(config, local_dir)})
+                return
+            if path == "/api/materials/analyze":
+                content_hash = str(payload.get("contentHash", "")).strip()
+                if not content_hash:
+                    raise ValueError("缺少素材 contentHash")
+                result = analyze_material(
+                    content_hash,
+                    provider_id=str(payload.get("provider", "auto")),
+                    model=str(payload.get("model", "")).strip() or None,
+                    prompt=str(payload.get("prompt", "")).strip() or None,
+                    allow_external_model=bool(payload.get("allowExternalModel", False)),
+                    root=ROOT,
+                )
+                self._json(200, {"ok": True, "result": result})
                 return
             brief = payload.get("brief")
             if not isinstance(brief, dict):
@@ -182,10 +231,80 @@ class WorkspaceHandler(BaseHTTPRequestHandler):
             self._json(400, {"ok": False, "error": str(exc)})
         except GenerationError as exc:
             self._json(502, {"ok": False, "error": str(exc)})
+        except ProviderError as exc:
+            self._json(502, {"ok": False, "error": str(exc)})
         except CollectionError as exc:
             self._json(502, {"ok": False, "error": str(exc)})
+        except MaterialError as exc:
+            self._json(500, {"ok": False, "error": str(exc)})
         except (OSError, RuntimeError) as exc:
             self._json(500, {"ok": False, "error": str(exc)})
+
+    def _upload_material(self) -> None:
+        length = int(self.headers.get("Content-Length", "0"))
+        if length <= 0 or length > MAX_MATERIAL_UPLOAD:
+            raise ValueError("素材文件为空或超过 100 MB")
+        content_type = self.headers.get("Content-Type", "")
+        if not content_type.startswith("multipart/form-data"):
+            raise ValueError("素材上传必须使用 multipart/form-data")
+        form = cgi.FieldStorage(
+            fp=self.rfile,
+            headers=self.headers,
+            environ={"REQUEST_METHOD": "POST", "CONTENT_TYPE": content_type, "CONTENT_LENGTH": str(length)},
+            keep_blank_values=True,
+        )
+        upload = form["file"] if "file" in form else None
+        if upload is None or not getattr(upload, "filename", None):
+            raise ValueError("缺少素材文件")
+        privacy = str(form.getfirst("privacy", "internal"))
+        if privacy not in {"public", "internal", "restricted"}:
+            raise ValueError("隐私级别不正确")
+        material = ingest_stream(
+            upload.file,
+            Path(upload.filename).name,
+            job_id=str(form.getfirst("jobId", "capture")),
+            privacy=privacy,
+            root=ROOT,
+        )
+        self._json(200, {"ok": True, "material": material})
+
+    def _import_conversation(self) -> None:
+        length = int(self.headers.get("Content-Length", "0"))
+        if length <= 0 or length > MAX_UPLOAD_BODY:
+            raise ValueError("会话导出文件为空或超过 250 MB")
+        content_type = self.headers.get("Content-Type", "")
+        if not content_type.startswith("multipart/form-data"):
+            raise ValueError("会话导入必须使用 multipart/form-data")
+        form = cgi.FieldStorage(
+            fp=self.rfile,
+            headers=self.headers,
+            environ={"REQUEST_METHOD": "POST", "CONTENT_TYPE": content_type, "CONTENT_LENGTH": str(length)},
+            keep_blank_values=True,
+        )
+        upload = form["file"] if "file" in form else None
+        if upload is None or not getattr(upload, "filename", None):
+            raise ValueError("缺少会话导出文件")
+        filename = Path(upload.filename).name
+        if Path(filename).suffix.lower() not in {".zip", ".json", ".jsonl", ".md", ".txt"}:
+            raise ValueError("仅支持 ZIP、JSON、JSONL、Markdown 和 TXT")
+        project = str(form.getfirst("project", "")).strip() or None
+        if project and project not in {"project-a", "project-b", "project-c", "project-d"}:
+            raise ValueError("项目 ID 不正确")
+        sensitivity = str(form.getfirst("sensitivity", "internal"))
+        if sensitivity not in {"public", "internal", "restricted"}:
+            raise ValueError("敏感级别不正确")
+        upload_dir = ROOT / "local" / "uploads" / "conversations"
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        temporary = upload_dir / filename
+        with temporary.open("wb") as destination:
+            shutil.copyfileobj(upload.file, destination)
+        try:
+            vault, database = default_paths()
+            report = import_export(temporary, vault, ROOT / "local", project, sensitivity)
+            knowledge = rebuild_index(vault, database)
+        finally:
+            temporary.unlink(missing_ok=True)
+        self._json(200, {"ok": True, "report": report, "knowledge": knowledge, "imports": conversation_import_status()})
 
     def _serve_static(self, raw_path: str) -> None:
         relative = unquote(raw_path).lstrip("/") or "index.html"

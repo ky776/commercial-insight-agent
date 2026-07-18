@@ -139,7 +139,7 @@ h2 { margin: 0; font-size: 16px; line-height: 1.4; }
 .stepper li { padding: 10px 5px; color: #8a8f89; font-size: 11px; text-align: center; }
 .stepper li.current { color: var(--accent); font-weight: 700; box-shadow: inset 0 -2px var(--accent); }
 
-.input-section, .brief-section, .generation-section, .signal-section { max-width: 920px; margin: 0 auto; }
+.input-section, .brief-section, .generation-section, .signal-section, .knowledge-system-section { max-width: 920px; margin: 0 auto; }
 .brief-section { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
 .generation-section { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
 .hidden { display: none; }
@@ -186,6 +186,12 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); box-sha
 .file-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 10px; border-left: 2px solid var(--accent); background: var(--surface-soft); font-size: 12px; }
 .file-row span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .file-row small { flex: none; color: var(--muted); }
+.file-row-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+.mini-button { min-height: 28px; padding: 3px 9px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; font: inherit; }
+.mini-button:hover { border-color: var(--accent); color: var(--accent); }
+.file-state.uploading { color: var(--warning); }
+.file-state.ready { color: var(--accent); }
+.file-state.failed { max-width: 260px; color: #a64032; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .form-grid, .brief-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .form-grid { margin-top: 18px; }
 .brief-grid { margin-top: 20px; }
@@ -240,6 +246,20 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); box-sha
 .signal-meta a { color: var(--accent); }
 .signal-error-list { margin-top: 14px; color: var(--warning); font-size: 10px; line-height: 1.6; }
 
+.conversation-import-form { display: grid; grid-template-columns: 1.35fr 1fr; gap: 18px; margin-top: 24px; }
+.conversation-file-picker { min-height: 128px; display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 20px; border: 1px dashed #aeb5ac; border-radius: 6px; background: var(--surface-soft); text-align: center; }
+.conversation-file-picker input { display: none; }
+.conversation-file-picker strong { font-size: 13px; overflow-wrap: anywhere; }
+.conversation-file-picker span { margin: 0; color: var(--muted); font-size: 10px; font-weight: 400; }
+.conversation-import-options { display: grid; gap: 14px; align-content: center; }
+.conversation-results-heading { margin: 30px 0 12px; padding-top: 24px; border-top: 1px solid var(--line); }
+.conversation-results-heading h3 { margin: 0; font-size: 13px; }
+.conversation-import-results { display: grid; gap: 7px; }
+.conversation-import-item { padding: 12px 14px; border: 1px solid var(--line); border-radius: 6px; }
+.conversation-import-item strong, .conversation-import-item span { display: block; }
+.conversation-import-item strong { font-size: 12px; }
+.conversation-import-item span { margin-top: 4px; color: var(--muted); font-size: 10px; overflow-wrap: anywhere; }
+
 .evidence-panel { border-left: 1px solid var(--line); padding: 22px 18px; }
 .evidence-panel section + section { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--line); }
 .evidence-list { display: grid; gap: 7px; }
@@ -290,6 +310,7 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); box-sha
   .stepper { overflow-x: auto; grid-template-columns: repeat(7, 68px); }
   .source-row, .form-grid, .brief-grid { grid-template-columns: 1fr; }
   .signal-config, .signal-metrics { grid-template-columns: 1fr; }
+  .conversation-import-form { grid-template-columns: 1fr; }
   .signal-metrics div { border-right: 0; border-bottom: 1px solid var(--line); }
   .signal-metrics div:last-child { border-bottom: 0; }
   .source-add-row { grid-template-columns: 1fr; }
