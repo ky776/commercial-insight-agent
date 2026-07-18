@@ -1,0 +1,44 @@
+version: 1
+
+states:
+  - captured
+  - parsing
+  - brief_review
+  - ready
+  - analyzing
+  - generation_review
+  - generating
+  - draft_ready
+  - approved
+  - exported
+  - archived
+  - needs_input
+  - failed
+
+privacy_classes:
+  - public
+  - internal
+  - restricted
+
+source_types:
+  - text
+  - url
+  - markdown
+  - pdf
+  - image
+  - gif
+  - audio
+  - video
+
+artifact_types:
+  - brief
+  - material_analysis
+  - insight
+  - short_video_script
+  - shot_list
+  - captions
+  - article_outline
+  - infographic_structure
+  - daily_digest
+  - weekly_digest
+  - export

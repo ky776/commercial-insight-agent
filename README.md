@@ -33,6 +33,8 @@ The first version focuses on:
 - WeChat article outlines
 - Weekly industry digests
 - Obsidian knowledge-base retrieval with auditable note citations
+- Structured brief routing to reduce repeated context and clarification
+- Local-first job, artifact, and media storage boundaries
 
 Out of scope for the first version:
 
@@ -49,7 +51,12 @@ Out of scope for the first version:
 commercial-insight-agent/
 ├── README.md
 ├── docs/
-│   └── prd.md
+│   ├── prd.md
+│   ├── user_workflow.md
+│   ├── storage_architecture.md
+│   ├── security.md
+│   ├── video_provider.md
+│   └── ui_spec.md
 ├── prompts/
 │   ├── system.md
 │   ├── daily_research.md
@@ -68,14 +75,20 @@ commercial-insight-agent/
 │   ├── material_library.md
 │   └── opinion_bank.md
 ├── config/
+│   ├── app.yaml
 │   └── knowledge.yaml
 ├── scripts/
 │   └── knowledge_check.py
+├── skills/
+│   ├── brief-router/
+│   └── product-ui-guardrails/
 └── data/
     ├── sources.yaml
     ├── insight_schema.yaml
     ├── material_schema.yaml
     ├── knowledge_note_schema.yaml
+    ├── task_brief_schema.yaml
+    ├── job_schema.yaml
     └── topic_schema.yaml
 ```
 
@@ -90,6 +103,14 @@ python3 scripts/knowledge_check.py
 ```
 
 See `docs/knowledge_architecture.md` for the hybrid retrieval and evaluation design.
+
+## Founder Workspace Design
+
+- `docs/user_workflow.md`: capture-to-export user flow
+- `docs/storage_architecture.md`: Obsidian, SQLite, and local file responsibilities
+- `docs/security.md`: GitHub sync and data classification rules
+- `docs/video_provider.md`: MVP video boundary and future provider contract
+- `docs/ui_spec.md`: local workbench information architecture and visual rules
 
 ## Primary Channels
 

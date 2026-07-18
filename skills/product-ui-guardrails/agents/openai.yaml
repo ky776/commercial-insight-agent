@@ -1,0 +1,4 @@
+interface:
+  display_name: "专业工作台界面规范"
+  short_description: "为商业洞察工作台生成克制、紧凑、低AI感的专业界面"
+  default_prompt: "Use $product-ui-guardrails to design or review the founder workspace interface."

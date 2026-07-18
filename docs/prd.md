@@ -6,6 +6,8 @@ Build a lightweight research assistant that helps produce high-quality content f
 
 The agent should help discover signals, structure information, generate content ideas, and draft scripts. It should not publish content or replace human judgment.
 
+The first product is a local-first founder workspace for one operator. It is not a customer self-service product.
+
 ## 2. Target Audience
 
 The content is designed for:
@@ -29,6 +31,19 @@ Many SMB brands spend money on ads, agencies, creators, and content, but the own
 The content should translate ad platform and commercial system knowledge into practical owner-level judgment.
 
 ## 4. MVP Functions
+
+### Input And Task Brief
+
+Accept text, URLs, and local files. Create an editable structured brief before expensive analysis or generation.
+
+Output:
+
+- Goal and target audience
+- Source references
+- Constraints and deliverable
+- Confirmed decisions and assumptions
+- No more than three blocking questions
+- Knowledge queries and context budget
 
 ### Daily Research
 
@@ -88,6 +103,7 @@ Generate drafts for:
 - WeChat article outlines
 - Infographic structures
 - Weekly digests
+- Shot lists, captions, B-roll suggestions, and cover copy
 
 ## 5. Non-goals
 
@@ -99,8 +115,13 @@ The MVP does not:
 - Auto-reply to comments or DMs
 - Guarantee ROI
 - Use unverified data as fact
+- Generate complete videos
+- Provide customer accounts, billing, or public sharing
+- Store client raw data in GitHub
 
 ## 6. Workflow
+
+The product workflow is defined in `docs/user_workflow.md`. The daily and weekly editorial routines below operate through the same job and artifact model.
 
 ### Daily
 
@@ -143,4 +164,3 @@ The MVP does not:
 - 2-5 monthly advisory customers
 - 3+ anonymized cases
 - A clear decision on service-led cash flow vs. productization
-

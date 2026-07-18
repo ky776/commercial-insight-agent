@@ -1,0 +1,45 @@
+version: 1
+
+required:
+  - mode
+  - goal
+  - audience
+  - inputs
+  - constraints
+  - deliverable
+  - budget_profile
+
+modes:
+  - capture
+  - discuss
+  - decide
+  - execute
+
+fields:
+  goal:
+    type: string
+    max_length: 240
+  audience:
+    type: string
+  inputs:
+    type: array
+  constraints:
+    type: array
+  deliverable:
+    type: string
+  confirmed_decisions:
+    type: array
+  assumptions:
+    type: array
+  blocking_questions:
+    type: array
+    max_items: 3
+  knowledge_queries:
+    type: array
+  file_scope:
+    type: array
+  budget_profile:
+    enum:
+      - light
+      - standard
+      - deep

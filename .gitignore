@@ -7,6 +7,10 @@ build/
 .cache/
 .tmp/
 *.log
+*.sqlite
+*.sqlite3
+__pycache__/
+*.py[cod]
 
 # Local research exports and private notes
 local/

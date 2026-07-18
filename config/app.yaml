@@ -1,0 +1,28 @@
+app:
+  mode: founder_workspace
+  language: zh-CN
+  automatic_publish: false
+  customer_login: false
+
+paths:
+  vault: ../commercial-insight-vault
+  database: local/app.sqlite3
+  inputs: local/inputs
+  processed: local/processed
+  outputs: local/outputs
+  cache: local/cache
+  logs: local/logs
+
+features:
+  brief_router: true
+  local_file_ingestion: true
+  url_ingestion: true
+  knowledge_retrieval: true
+  complete_video_generation: false
+  manual_export: true
+
+review:
+  require_brief_confirmation: true
+  require_fact_review: true
+  require_export_approval: true
+  max_blocking_questions: 3

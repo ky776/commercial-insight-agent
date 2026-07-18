@@ -1,0 +1,7 @@
+interface:
+  display_name: "需求澄清与上下文压缩"
+  short_description: "把自然表达压缩成可执行任务简报，只追问真正关键的问题"
+  default_prompt: "Use $brief-router to turn my request into a concise executable brief before doing expensive work."
+
+policy:
+  allow_implicit_invocation: true
