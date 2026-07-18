@@ -132,7 +132,8 @@ function generateBrief() {
     url || null,
     ...state.files.map(file => `${file.name}（${formatBytes(file.size)}）`),
   ].filter(Boolean);
-  const queries = deriveQueries(combinedText || url);
+  const querySource = [combinedText, url, ...state.files.map(file => file.name)].filter(Boolean).join("\n");
+  const queries = deriveQueries(querySource);
   const questions = [];
   if (!audience) questions.push("这份内容最希望影响谁？");
   if (!deliverable) questions.push("需要输出什么具体产物？");
@@ -342,10 +343,17 @@ function deriveGoal(text, deliverable) {
 }
 
 function deriveQueries(text) {
-  const vocabulary = ["广告效果", "获客成本", "平台流量", "企业号", "本地生活", "电商", "短剧", "漫剧", "商单", "代理商", "归因", "结算", "品牌", "内容生态", "AI 营销"];
+  const vocabulary = ["广告效果", "获客成本", "平台流量", "企业号", "本地生活", "电商", "短剧", "漫剧", "商单", "代理商", "归因", "结算", "品牌", "内容生态", "AI 营销", "AI应用", "AI算力", "Agent", "商业化", "软件行业", "生成式AI"];
   const matches = vocabulary.filter(term => text.includes(term));
-  const words = text.replace(/[，。；：！？、,.!?;:\n]/g, " ").split(/\s+/).filter(word => word.length >= 2 && word.length <= 12);
-  return [...new Set([...matches, ...words.slice(0, 4)])].slice(0, 6);
+  const stopWords = new Set(["分析这份报告", "提炼核心观点", "生成自媒体内容", "生成", "报告", "素材", "用户任务描述"]);
+  const words = text
+    .replace(/【[^】]*】/g, " ")
+    .replace(/\.(pdf|md|txt)$/gi, " ")
+    .replace(/[，。；：！？、,.!?;:\n（）()\[\]]/g, " ")
+    .split(/\s+/)
+    .map(word => word.trim())
+    .filter(word => word.length >= 2 && word.length <= 16 && !stopWords.has(word));
+  return [...new Set([...matches, ...words])].slice(0, 8);
 }
 
 function deriveBudget(text, fileCount, mode) {

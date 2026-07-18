@@ -102,7 +102,16 @@ Check local connectivity with:
 python3 scripts/knowledge_check.py
 ```
 
+Build and query the local evidence index with:
+
+```bash
+python3 scripts/knowledge_store.py index
+python3 scripts/knowledge_store.py search "广告成本 代理商透明度"
+python3 scripts/brief_retrieve.py "/absolute/path/task-brief.md"
+```
+
 See `docs/knowledge_architecture.md` for the hybrid retrieval and evaluation design.
+See `docs/local_knowledge_workflow.md` for PDF ingestion and auditable local search.
 
 ## Founder Workspace Design
 
