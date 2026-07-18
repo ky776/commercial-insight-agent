@@ -1,0 +1,61 @@
+id:
+material_type:
+  - short_video
+  - long_video
+  - article
+  - social_post
+  - screenshot
+  - infographic
+  - gif
+  - animation
+  - landing_page
+  - report_excerpt
+source_platform:
+source_url:
+local_file:
+creator_or_publisher:
+published_at:
+collected_at:
+topic:
+target_audience:
+why_high_quality:
+public_reference_allowed:
+private_inspiration_only:
+summary:
+hook:
+pain_point:
+curiosity_gap:
+structure:
+visual_notes:
+business_insight:
+related_themes:
+  - ad_effectiveness_optimization
+  - rising_acquisition_cost
+  - platform_traffic_allocation
+  - enterprise_account
+  - local_business
+  - ecommerce
+  - short_drama
+  - micro_drama
+  - agency_transparency
+  - brand_building
+  - content_asset_accumulation
+reusable_patterns:
+  title_pattern:
+  hook_pattern:
+  structure_pattern:
+  visual_pattern:
+  cta_pattern:
+adaptation_ideas:
+  douyin:
+  wechat_video_account:
+  wechat_article:
+  infographic:
+facts_to_verify:
+copyright_risks:
+sensitive_claims:
+status:
+  - collected
+  - analyzed
+  - adapted
+  - archived

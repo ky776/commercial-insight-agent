@@ -32,6 +32,7 @@ The first version focuses on:
 - Short video script drafts
 - WeChat article outlines
 - Weekly industry digests
+- Obsidian knowledge-base retrieval with auditable note citations
 
 Out of scope for the first version:
 
@@ -56,17 +57,39 @@ commercial-insight-agent/
 │   ├── short_video_script.md
 │   ├── article_outline.md
 │   ├── infographic_structure.md
-│   └── weekly_digest.md
+│   ├── weekly_digest.md
+│   ├── material_analysis.md
+│   └── knowledge_retrieval.md
 ├── knowledge/
 │   ├── personal_background.md
 │   ├── positioning.md
 │   ├── service_packages.md
-│   └── content_boundaries.md
+│   ├── content_boundaries.md
+│   ├── material_library.md
+│   └── opinion_bank.md
+├── config/
+│   └── knowledge.yaml
+├── scripts/
+│   └── knowledge_check.py
 └── data/
     ├── sources.yaml
     ├── insight_schema.yaml
+    ├── material_schema.yaml
+    ├── knowledge_note_schema.yaml
     └── topic_schema.yaml
 ```
+
+## Obsidian Knowledge Vault
+
+The private Obsidian Vault lives in the sibling directory `../commercial-insight-vault`. The Agent repository contains only schemas, retrieval rules, and prompts; private source material and customer learning remain in the Vault.
+
+Check local connectivity with:
+
+```bash
+python3 scripts/knowledge_check.py
+```
+
+See `docs/knowledge_architecture.md` for the hybrid retrieval and evaluation design.
 
 ## Primary Channels
 
@@ -83,4 +106,3 @@ Before publishing, manually review:
 - Sensitive company or individual references
 - Overpromising or ROI claims
 - Whether the final view represents the author's actual judgment
-

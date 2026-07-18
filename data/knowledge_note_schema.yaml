@@ -1,0 +1,33 @@
+required_fields:
+  - type
+  - status
+
+recommended_fields:
+  - topics
+  - tags
+  - confidence
+  - source_url
+  - published_at
+  - created_at
+  - updated_at
+
+allowed_types:
+  - home
+  - source
+  - material
+  - insight
+  - content
+  - showcase
+
+allowed_statuses:
+  - inbox
+  - draft
+  - verified
+  - active
+  - published
+  - archived
+
+confidence_levels:
+  - low
+  - medium
+  - high

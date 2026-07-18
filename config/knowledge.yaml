@@ -1,0 +1,36 @@
+vault:
+  # Resolved relative to this repository root.
+  path: ../commercial-insight-vault
+  include:
+    - "**/*.md"
+  exclude:
+    - ".obsidian/**"
+    - ".trash/**"
+    - "attachments/private/**"
+    - "exports/**"
+
+indexing:
+  frontmatter: true
+  obsidian_links: true
+  heading_chunks: true
+  chunk_size_tokens: 600
+  chunk_overlap_tokens: 80
+  languages:
+    - zh
+    - en
+
+retrieval:
+  metadata_filter: true
+  lexical_top_k: 30
+  vector_top_k: 30
+  fusion: reciprocal_rank_fusion
+  rerank_top_k: 12
+  context_top_k: 6
+  require_note_citations: true
+
+reasoning:
+  separate_fact_inference_opinion: true
+  surface_conflicts: true
+  show_uncertainty: true
+  prefer_primary_sources: true
+  require_human_review_for_publish: true
