@@ -113,6 +113,14 @@ python3 scripts/brief_retrieve.py "/absolute/path/task-brief.md"
 See `docs/knowledge_architecture.md` for the hybrid retrieval and evaluation design.
 See `docs/local_knowledge_workflow.md` for PDF ingestion and auditable local search.
 
+Collect public GitHub and user-supplied social signals with:
+
+```bash
+python3 scripts/social_collector.py
+```
+
+See `docs/social_signal_pipeline.md` for the watchlist, feature schema, access boundary, and daily macOS schedule.
+
 ## Founder Workspace Design
 
 - `docs/user_workflow.md`: capture-to-export user flow

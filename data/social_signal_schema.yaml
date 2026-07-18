@@ -1,0 +1,49 @@
+version: 1
+
+required:
+  - id
+  - platform
+  - source_type
+  - title
+  - source_url
+  - collected_at
+  - categories
+  - relevance_score
+  - heat_score
+  - credibility_score
+  - business_value_score
+  - novelty_score
+  - company_activity_count
+  - evidence_status
+
+platforms:
+  - github
+  - x
+  - facebook
+  - rss
+  - public_web
+
+source_types:
+  - github_release
+  - github_event
+  - public_post
+  - rss_entry
+
+categories:
+  - model_release
+  - agent_ecosystem
+  - ai_industry_change
+  - business_model
+  - funding_and_ipo
+  - company_heat
+  - opinion_and_debate
+
+evidence_statuses:
+  - public_primary
+  - public_secondary
+  - needs_verification
+
+storage:
+  raw_json: local/cache/social/YYYY-MM-DD.json
+  daily_note: ../commercial-insight-vault/10_Sources/Social/YYYY-MM-DD-social-signals.md
+  state: local/social_state.json

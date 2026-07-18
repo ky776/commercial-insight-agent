@@ -73,7 +73,17 @@ overseas_sources:
     - X / Twitter
     - LinkedIn
 
+  public_signal_collection:
+    - name: GitHub public events and releases
+      access: public_rest
+      authentication: optional
+    - name: X public post URLs
+      access: user_supplied_public_url
+      note: Do not bypass login or anti-automation controls.
+    - name: Facebook public post URLs
+      access: user_supplied_public_url
+      note: Do not bypass login or anti-automation controls.
+
 primary_distribution_channels:
   - Douyin
   - WeChat Video Account
-

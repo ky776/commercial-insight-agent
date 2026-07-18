@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "daily_limit": 100,
+  "lookback_hours": 36,
+  "minimum_value_score": 42,
+  "github": {
+    "include_repository_events": true,
+    "users": [
+      "karpathy",
+      "simonw",
+      "swyxio"
+    ],
+    "repositories": [
+      "openai/codex",
+      "openai/openai-python",
+      "anthropics/anthropic-sdk-python",
+      "huggingface/transformers",
+      "langchain-ai/langchain",
+      "microsoft/autogen",
+      "ollama/ollama",
+      "vllm-project/vllm"
+    ]
+  },
+  "feeds": [],
+  "public_post_urls": [],
+  "manual_discovery": {
+    "x_accounts": [
+      "OpenAI",
+      "AnthropicAI",
+      "GoogleDeepMind",
+      "MetaAI",
+      "sama",
+      "karpathy",
+      "AndrewYNg",
+      "ylecun",
+      "demishassabis",
+      "swyx"
+    ],
+    "facebook_pages": [
+      "MetaAI"
+    ],
+    "note": "These accounts are a research watchlist only. Add specific public post URLs to public_post_urls or use an authorized API for automatic discovery."
+  },
+  "topics": {
+    "model_release": [
+      "model release",
+      "new model",
+      "foundation model",
+      "multimodal",
+      "reasoning model",
+      "模型发布",
+      "大模型",
+      "多模态",
+      "推理模型"
+    ],
+    "agent_ecosystem": [
+      "agent",
+      "agents",
+      "mcp",
+      "tool use",
+      "computer use",
+      "workflow",
+      "智能体",
+      "工作流"
+    ],
+    "ai_industry_change": [
+      "ai infrastructure",
+      "inference",
+      "training",
+      "compute",
+      "open source",
+      "regulation",
+      "算力",
+      "推理成本",
+      "开源",
+      "监管"
+    ],
+    "business_model": [
+      "business model",
+      "pricing",
+      "subscription",
+      "usage based",
+      "monetization",
+      "revenue",
+      "commercialization",
+      "商业模式",
+      "定价",
+      "订阅",
+      "变现",
+      "商业化"
+    ],
+    "funding_and_ipo": [
+      "funding",
+      "fundraise",
+      "series a",
+      "series b",
+      "valuation",
+      "ipo",
+      "acquisition",
+      "融资",
+      "估值",
+      "上市",
+      "收购"
+    ],
+    "company_heat": [
+      "launch",
+      "release",
+      "partnership",
+      "enterprise",
+      "developer adoption",
+      "发布",
+      "合作",
+      "企业客户",
+      "开发者"
+    ],
+    "opinion_and_debate": [
+      "prediction",
+      "thesis",
+      "debate",
+      "future of",
+      "观点",
+      "判断",
+      "争议",
+      "趋势"
+    ]
+  }
+}
