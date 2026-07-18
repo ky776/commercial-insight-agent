@@ -111,6 +111,11 @@ See `docs/knowledge_architecture.md` for the hybrid retrieval and evaluation des
 - `docs/security.md`: GitHub sync and data classification rules
 - `docs/video_provider.md`: MVP video boundary and future provider contract
 - `docs/ui_spec.md`: local workbench information architecture and visual rules
+- `docs/global_brief_router.md`: install the token-saving brief router globally
+
+## Local Workspace Prototype
+
+Open `web/index.html` directly in a browser to try the first local workflow: add text, a URL, or local files; generate an editable brief; save it in the browser; and export Markdown. No selected file is uploaded.
 
 ## Primary Channels
 

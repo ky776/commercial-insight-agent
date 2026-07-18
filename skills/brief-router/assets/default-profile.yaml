@@ -1,0 +1,20 @@
+version: 1
+language: zh-CN
+
+response:
+  lead_with: outcome
+  structure: compact
+  max_blocking_questions: 3
+  explain_unfamiliar_technical_terms: true
+
+input:
+  accept_freeform: true
+  accept_incremental_updates: true
+  preserve_original_wording_for_constraints: true
+
+adaptation:
+  require_confirmation_before_update: true
+  repeated_observation_threshold: 3
+  store_raw_conversations: false
+  candidate_preferences: []
+  confirmed_preferences: []

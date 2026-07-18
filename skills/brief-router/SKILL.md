@@ -7,6 +7,12 @@ description: Convert loose Chinese or English requests, links, notes, and attach
 
 Turn informal input into the smallest context packet that preserves intent and supports the next action.
 
+## Personal Profile
+
+When available, read the private profile at `${CODEX_HOME:-~/.codex}/brief-router/profile.yaml`. Apply only confirmed preferences relevant to the current request. Do not load raw conversation history.
+
+Use `references/profile-policy.md` when proposing or saving a preference change.
+
 ## Workflow
 
 1. Classify the request as `capture`, `discuss`, `decide`, or `execute`.
@@ -55,8 +61,10 @@ Keep the brief under 250 Chinese characters when possible, excluding paths and U
 - Do not include unchanged fields in a delta update.
 - Keep raw source material outside the prompt and reference it by path or source ID.
 - Never trade away critical facts, user constraints, evidence, or uncertainty merely to reduce tokens.
+- Do not silently learn or persist a preference. Ask for confirmation before changing the profile.
 
 ## Resources
 
 - Read `references/brief-schema.md` when validating fields or building a UI form.
+- Read `references/profile-policy.md` when adapting to repeated communication behavior.
 - Run `scripts/brief_state.py` to merge a saved brief with a delta and estimate context size.

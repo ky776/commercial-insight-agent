@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <title>Commercial Insight Workspace</title>
+    <meta name="description" content="本地优先的商业洞察与内容生产工作台" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand-block">
+        <span class="brand-mark" aria-hidden="true">CI</span>
+        <div>
+          <strong>Commercial Insight</strong>
+          <span>Founder Workspace</span>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <span class="local-status"><span class="status-dot"></span>本地模式</span>
+        <button class="button secondary" id="newJobButton" type="button">新建任务</button>
+      </div>
+    </header>
+
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="主导航">
+        <nav>
+          <button class="nav-item active" type="button" data-view="inbox" aria-current="page"><span>收件箱</span><span class="nav-count" id="jobCount">0</span></button>
+          <button class="nav-item" type="button" data-view="active"><span>进行中</span><span class="nav-count" id="activeCount">0</span></button>
+          <button class="nav-item" type="button" data-view="drafts"><span>内容草稿</span></button>
+          <button class="nav-item" type="button" data-view="knowledge"><span>知识库</span></button>
+          <button class="nav-item" type="button" data-view="exports"><span>导出记录</span></button>
+        </nav>
+
+        <section class="recent-section" aria-labelledby="recentHeading">
+          <div class="section-label" id="recentHeading">最近任务</div>
+          <div id="recentJobs" class="recent-jobs">
+            <p class="empty-copy">还没有保存的任务</p>
+          </div>
+        </section>
+      </aside>
+
+      <main class="workspace">
+        <div class="workspace-header">
+          <div>
+            <span class="eyebrow">当前任务</span>
+            <h1 id="workspaceTitle">整理新素材</h1>
+          </div>
+          <span class="state-badge" id="stateBadge">待输入</span>
+        </div>
+
+        <ol class="stepper" aria-label="工作流程">
+          <li class="current">素材</li>
+          <li>解析</li>
+          <li>简报</li>
+          <li>洞见</li>
+          <li>生成</li>
+          <li>审核</li>
+          <li>导出</li>
+        </ol>
+
+        <section class="input-section" aria-labelledby="inputHeading">
+          <div class="section-heading">
+            <div>
+              <h2 id="inputHeading">输入素材</h2>
+              <p>直接描述任务，也可以拖入文件。素材只在当前浏览器中读取。</p>
+            </div>
+            <fieldset class="segmented" aria-label="任务模式">
+              <label><input type="radio" name="mode" value="capture" /><span>收集</span></label>
+              <label><input type="radio" name="mode" value="discuss" checked /><span>讨论</span></label>
+              <label><input type="radio" name="mode" value="decide" /><span>决策</span></label>
+              <label><input type="radio" name="mode" value="execute" /><span>执行</span></label>
+            </fieldset>
+          </div>
+
+          <label class="field-label" for="requestInput">你想处理什么</label>
+          <textarea id="requestInput" rows="7" placeholder="例如：分析这份行业报告，提炼平台流量向企业号、本地和电商迁移的信号，生成一份 90 秒短视频口播稿。"></textarea>
+
+          <div class="source-row">
+            <label class="drop-zone" id="dropZone" for="fileInput">
+              <input id="fileInput" type="file" multiple accept=".md,.txt,.json,.csv,.pdf,.png,.jpg,.jpeg,.gif,.mp3,.wav,.mp4,.mov" />
+              <strong>选择文件或拖到这里</strong>
+              <span>支持文本、PDF、图片、音频和视频；原文件不会上传</span>
+            </label>
+            <div class="source-fields">
+              <label>
+                <span>网页链接</span>
+                <input id="urlInput" type="url" placeholder="https://" />
+              </label>
+              <label>
+                <span>隐私级别</span>
+                <select id="privacyInput">
+                  <option value="internal" selected>内部资料</option>
+                  <option value="public">公开资料</option>
+                  <option value="restricted">受限资料</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div id="fileList" class="file-list" aria-live="polite"></div>
+
+          <div class="form-grid">
+            <label>
+              <span>目标受众</span>
+              <input id="audienceInput" value="中小品牌老板" />
+            </label>
+            <label>
+              <span>期望产物</span>
+              <select id="deliverableInput">
+                <option value="short_video_script">短视频口播稿</option>
+                <option value="article_outline">公众号文章大纲</option>
+                <option value="material_analysis">素材拆解卡</option>
+                <option value="daily_digest">行业日报</option>
+                <option value="topic_pool">选题池</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="field-label" for="constraintsInput">约束条件</label>
+          <input id="constraintsInput" value="事实与观点分开；保留来源；常温、顾问型表达" />
+
+          <div class="primary-actions">
+            <button class="button primary" id="generateButton" type="button">生成任务简报</button>
+            <span class="action-note">先确认简报，再进入高消耗分析</span>
+          </div>
+        </section>
+
+        <section class="brief-section hidden" id="briefSection" aria-labelledby="briefHeading">
+          <div class="section-heading">
+            <div>
+              <h2 id="briefHeading">任务简报</h2>
+              <p>这是 Agent 将使用的最小上下文。可以直接修改任何字段。</p>
+            </div>
+            <span class="budget-badge" id="budgetBadge">标准预算</span>
+          </div>
+
+          <div class="brief-grid">
+            <label class="span-two">
+              <span>目标</span>
+              <textarea id="briefGoal" rows="3"></textarea>
+            </label>
+            <label>
+              <span>目标受众</span>
+              <input id="briefAudience" />
+            </label>
+            <label>
+              <span>产物</span>
+              <input id="briefDeliverable" />
+            </label>
+            <label class="span-two">
+              <span>输入来源</span>
+              <textarea id="briefInputs" rows="3"></textarea>
+            </label>
+            <label class="span-two">
+              <span>约束条件</span>
+              <textarea id="briefConstraints" rows="3"></textarea>
+            </label>
+            <label>
+              <span>工作假设</span>
+              <textarea id="briefAssumptions" rows="4"></textarea>
+            </label>
+            <label>
+              <span>知识库检索词</span>
+              <textarea id="briefQueries" rows="4"></textarea>
+            </label>
+            <label class="span-two">
+              <span>待确认问题</span>
+              <textarea id="briefQuestions" rows="3"></textarea>
+            </label>
+          </div>
+
+          <div class="brief-actions">
+            <button class="button primary" id="saveButton" type="button">保存任务</button>
+            <button class="button secondary" id="exportButton" type="button">导出 Markdown</button>
+            <button class="button text-button" id="resetButton" type="button">重新整理</button>
+          </div>
+        </section>
+      </main>
+
+      <aside class="evidence-panel" aria-label="来源与风险">
+        <section>
+          <div class="section-label">来源</div>
+          <div id="evidenceSources" class="evidence-list">
+            <p class="empty-copy">添加文本、链接或文件后显示</p>
+          </div>
+        </section>
+
+        <section>
+          <div class="section-label">上下文预算</div>
+          <dl class="metrics">
+            <div><dt>输入估算</dt><dd id="tokenEstimate">0 tokens</dd></div>
+            <div><dt>检索范围</dt><dd id="retrievalEstimate">未生成</dd></div>
+            <div><dt>处理方式</dt><dd>本地预处理</dd></div>
+          </dl>
+        </section>
+
+        <section class="risk-section">
+          <div class="section-label">隐私与审核</div>
+          <ul class="check-list" id="riskList">
+            <li class="ok">不自动上传素材</li>
+            <li class="ok">不自动发布内容</li>
+            <li>生成后需人工核验事实</li>
+          </ul>
+        </section>
+      </aside>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./app.js"></script>
+  </body>
+</html>
