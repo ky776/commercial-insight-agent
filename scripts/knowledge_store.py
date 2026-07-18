@@ -128,6 +128,7 @@ def connect(database: Path) -> sqlite3.Connection:
             topics TEXT NOT NULL,
             confidence TEXT,
             source_url TEXT,
+            sensitivity TEXT NOT NULL DEFAULT 'internal',
             content_hash TEXT NOT NULL,
             modified_ns INTEGER NOT NULL
         );
@@ -145,6 +146,9 @@ def connect(database: Path) -> sqlite3.Connection:
         );
         """
     )
+    columns = {row[1] for row in connection.execute("PRAGMA table_info(knowledge_notes)")}
+    if "sensitivity" not in columns:
+        connection.execute("ALTER TABLE knowledge_notes ADD COLUMN sensitivity TEXT NOT NULL DEFAULT 'internal'")
     return connection
 
 
@@ -181,14 +185,15 @@ def rebuild_index(vault: Path, database: Path) -> dict:
         if isinstance(topics, str):
             topics = [topics]
         digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+        sensitivity = metadata.get("sensitivity") or ("restricted" if relative.startswith("95_Private/") else "internal")
         connection.execute(
             """INSERT INTO knowledge_notes
-               (path, title, note_type, status, topics, confidence, source_url, content_hash, modified_ns)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               (path, title, note_type, status, topics, confidence, source_url, sensitivity, content_hash, modified_ns)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 relative, title, metadata.get("type"), metadata.get("status"),
                 json.dumps(topics, ensure_ascii=False), metadata.get("confidence"),
-                metadata.get("source_url"), digest, note_path.stat().st_mtime_ns,
+                metadata.get("source_url"), sensitivity, digest, note_path.stat().st_mtime_ns,
             ),
         )
         for chunk in chunk_markdown(body):
@@ -287,7 +292,7 @@ def search_index(
     where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
     rows = connection.execute(
         f"""SELECT c.id, c.note_path, c.title, c.heading, c.body, c.ordinal,
-                   n.note_type, n.status, n.topics, n.confidence, n.source_url
+                   n.note_type, n.status, n.topics, n.confidence, n.source_url, n.sensitivity
             FROM knowledge_chunks c
             JOIN knowledge_notes n ON n.path = c.note_path
             {where}""",
@@ -308,6 +313,7 @@ def search_index(
             "status": row["status"],
             "confidence": row["confidence"],
             "source_url": row["source_url"],
+            "sensitivity": row["sensitivity"],
             "score": round(score, 2),
             "excerpt": excerpt(row["body"], terms),
         })

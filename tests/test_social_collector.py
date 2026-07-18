@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from scripts.social_collector import CollectionError, HttpClient, Signal, collect, deduplicate_by_url, parse_feed, render_daily_note, score_signal, validate_public_url
+from scripts.social_service import add_watch_source, radar_status
 
 
 TOPICS = {
@@ -112,6 +113,31 @@ class SocialCollectorTest(unittest.TestCase):
             self.assertTrue(Path(report["note"]).is_file())
             self.assertTrue((local / "social_state.json").is_file())
             self.assertIn("New model Agent release", Path(report["note"]).read_text(encoding="utf-8"))
+
+    def test_signal_radar_config_and_latest_results(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            config = root / "watchlist.json"
+            local = root / "local"
+            config.write_text(json.dumps({
+                "daily_limit": 100,
+                "github": {"users": [], "repositories": []},
+                "feeds": [],
+                "public_post_urls": [],
+                "manual_discovery": {"x_accounts": [], "facebook_pages": []},
+            }), encoding="utf-8")
+            add_watch_source(config, "x_account", "@karpathy")
+            add_watch_source(config, "github_repository", "openai/codex")
+            add_watch_source(config, "public_post_url", "https://x.com/example/status/1")
+            cache = local / "cache" / "social"
+            cache.mkdir(parents=True)
+            (cache / "2026-07-18.json").write_text(json.dumps({
+                "date": "2026-07-18", "signal_count": 1, "errors": [], "signals": [{"id": "one"}],
+            }), encoding="utf-8")
+            status = radar_status(config, local)
+            self.assertEqual(status["configured"]["xAccounts"], ["karpathy"])
+            self.assertEqual(status["configured"]["githubRepositories"], ["openai/codex"])
+            self.assertEqual(status["latest"]["signal_count"], 1)
 
 
 if __name__ == "__main__":

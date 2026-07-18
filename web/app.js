@@ -1,5 +1,5 @@
 const STORAGE_KEY = "commercial-insight-founder-jobs-v1";
-const state = { files: [], extractedText: [], currentBrief: null, currentView: "inbox", jobs: loadJobs() };
+const state = { files: [], extractedText: [], currentBrief: null, currentView: "inbox", jobs: loadJobs(), service: null, lastArtifact: null };
 
 const elements = {
   request: document.querySelector("#requestInput"),
@@ -31,6 +31,34 @@ const elements = {
   briefAssumptions: document.querySelector("#briefAssumptions"),
   briefQueries: document.querySelector("#briefQueries"),
   briefQuestions: document.querySelector("#briefQuestions"),
+  generationSection: document.querySelector("#generationSection"),
+  provider: document.querySelector("#providerInput"),
+  artifactEditor: document.querySelector("#artifactEditor"),
+  generationMeta: document.querySelector("#generationMeta"),
+  retrievedEvidence: document.querySelector("#retrievedEvidenceList"),
+  serviceStatus: document.querySelector("#serviceStatus"),
+  serviceStatusText: document.querySelector("#serviceStatusText"),
+  runButton: document.querySelector("#runButton"),
+  revision: document.querySelector("#revisionInput"),
+  reviseButton: document.querySelector("#reviseButton"),
+  saveArtifactButton: document.querySelector("#saveArtifactButton"),
+  approveArtifactButton: document.querySelector("#approveArtifactButton"),
+  artifactHistory: document.querySelector("#artifactHistory"),
+  signalSection: document.querySelector("#signalSection"),
+  signalCount: document.querySelector("#signalCount"),
+  signalDate: document.querySelector("#signalDate"),
+  signalTotal: document.querySelector("#signalTotal"),
+  signalErrors: document.querySelector("#signalErrors"),
+  signalSchedule: document.querySelector("#signalSchedule"),
+  signalBoundary: document.querySelector("#signalBoundary"),
+  signalWatchlist: document.querySelector("#signalWatchlist"),
+  signalResults: document.querySelector("#signalResults"),
+  signalErrorList: document.querySelector("#signalErrorList"),
+  signalResultMeta: document.querySelector("#signalResultMeta"),
+  signalSourceType: document.querySelector("#signalSourceType"),
+  signalSourceValue: document.querySelector("#signalSourceValue"),
+  collectSignalsButton: document.querySelector("#collectSignalsButton"),
+  addSignalSourceButton: document.querySelector("#addSignalSourceButton"),
 };
 
 const deliverableLabels = {
@@ -44,6 +72,14 @@ const deliverableLabels = {
 document.querySelector("#generateButton").addEventListener("click", generateBrief);
 document.querySelector("#saveButton").addEventListener("click", saveCurrentJob);
 document.querySelector("#exportButton").addEventListener("click", exportMarkdown);
+elements.runButton.addEventListener("click", runGeneration);
+document.querySelector("#regenerateButton").addEventListener("click", runGeneration);
+document.querySelector("#downloadArtifactButton").addEventListener("click", downloadArtifact);
+elements.reviseButton.addEventListener("click", reviseArtifact);
+elements.saveArtifactButton.addEventListener("click", saveArtifactVersion);
+elements.approveArtifactButton.addEventListener("click", approveArtifact);
+elements.collectSignalsButton.addEventListener("click", collectSignals);
+elements.addSignalSourceButton.addEventListener("click", addSignalSource);
 document.querySelector("#resetButton").addEventListener("click", () => elements.briefSection.classList.add("hidden"));
 document.querySelector("#newJobButton").addEventListener("click", resetWorkspace);
 document.querySelectorAll(".nav-item").forEach(button => button.addEventListener("click", () => changeView(button)));
@@ -137,7 +173,7 @@ function generateBrief() {
   const questions = [];
   if (!audience) questions.push("这份内容最希望影响谁？");
   if (!deliverable) questions.push("需要输出什么具体产物？");
-  if (mode === "execute" && elements.privacy.value === "restricted") questions.push("受限资料是否允许发送给外部模型？");
+  // External-model consent is requested only when the user explicitly selects that provider.
 
   const budget = deriveBudget(combinedText, state.files.length, mode);
   state.currentBrief = {
@@ -151,6 +187,7 @@ function generateBrief() {
     inputs,
     constraints,
     deliverable,
+    deliverableType: elements.deliverable.value,
     confirmedDecisions: ["先确认简报，再进行高消耗分析"],
     assumptions: ["真人表达优先，不生成完整 AI 视频", "使用常温、克制、顾问型表达"],
     blockingQuestions: questions.slice(0, 3),
@@ -229,6 +266,7 @@ function renderJobs() {
     inbox: "最近任务",
     active: "进行中",
     drafts: "内容草稿",
+    signals: "信号雷达",
     knowledge: "知识库状态",
     exports: "导出记录",
   };
@@ -236,6 +274,7 @@ function renderJobs() {
   if (!visibleJobs.length) {
     const copy = state.currentView === "knowledge"
       ? "知识素材由本地 Obsidian Vault 管理"
+      : state.currentView === "signals" ? "观察名单与采集结果显示在主工作区"
       : "当前视图还没有任务";
     elements.recentJobs.innerHTML = `<p class="empty-copy">${copy}</p>`;
     return;
@@ -257,14 +296,30 @@ function changeView(button) {
     if (active) item.setAttribute("aria-current", "page");
     else item.removeAttribute("aria-current");
   });
+  const signalView = state.currentView === "signals";
+  elements.signalSection.classList.toggle("hidden", !signalView);
+  document.querySelector(".stepper").classList.toggle("hidden", signalView);
+  elements.request.closest(".input-section").classList.toggle("hidden", signalView);
+  if (signalView) {
+    elements.briefSection.classList.add("hidden");
+    elements.generationSection.classList.add("hidden");
+    elements.workspaceTitle.textContent = "公开信号雷达";
+    elements.stateBadge.textContent = "公开来源";
+    loadSignalRadar();
+  } else {
+    if (state.currentBrief) elements.briefSection.classList.remove("hidden");
+    if (state.lastArtifact) elements.generationSection.classList.remove("hidden");
+    elements.workspaceTitle.textContent = state.currentBrief ? state.currentBrief.goal.slice(0, 28) : "整理新素材";
+    elements.stateBadge.textContent = state.currentBrief ? stateLabel(state.currentBrief.state) : "待输入";
+  }
   renderJobs();
 }
 
 function filterJobs(jobs, view) {
   if (view === "active") return jobs.filter(job => !["exported", "archived"].includes(job.state));
-  if (view === "drafts") return jobs.filter(job => ["brief_review", "ready", "needs_input"].includes(job.state));
+  if (view === "drafts") return jobs.filter(job => ["brief_review", "ready", "needs_input", "generated"].includes(job.state));
   if (view === "exports") return jobs.filter(job => job.state === "exported");
-  if (view === "knowledge") return [];
+  if (["knowledge", "signals"].includes(view)) return [];
   return jobs;
 }
 
@@ -289,6 +344,8 @@ function loadJob(jobId) {
   elements.stateBadge.textContent = stateLabel(job.state);
   elements.privacy.value = job.privacy;
   updatePrivacyState();
+  elements.generationSection.classList.remove("hidden");
+  loadArtifactHistory(job.id, true);
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -300,6 +357,11 @@ function resetWorkspace() {
   elements.url.value = "";
   elements.fileInput.value = "";
   elements.briefSection.classList.add("hidden");
+  elements.generationSection.classList.add("hidden");
+  elements.artifactEditor.value = "";
+  elements.revision.value = "";
+  elements.artifactHistory.innerHTML = '<p class="empty-copy">尚无版本</p>';
+  state.lastArtifact = null;
   elements.fileList.innerHTML = "";
   elements.workspaceTitle.textContent = "整理新素材";
   elements.stateBadge.textContent = "待输入";
@@ -307,6 +369,344 @@ function resetWorkspace() {
   renderEvidence();
   updateContextEstimate();
   elements.request.focus();
+}
+
+async function checkService() {
+  try {
+    const response = await fetch("/api/health", { cache: "no-store" });
+    if (!response.ok) throw new Error("服务不可用");
+    state.service = await response.json();
+    elements.serviceStatus.className = "local-status connected";
+    elements.serviceStatusText.textContent = `本地服务 · ${state.service.knowledge.notes} 条笔记`;
+    elements.generationMeta.textContent = state.service.generation.openaiConfigured
+      ? `已连接知识库；自动模式使用 ${state.service.generation.defaultModel}，受限资料保持本地。`
+      : "已连接知识库；未配置模型时自动使用本地证据模式。";
+  } catch (_) {
+    state.service = null;
+    elements.serviceStatus.className = "local-status disconnected";
+    elements.serviceStatusText.textContent = "离线页面";
+  }
+}
+
+async function runGeneration() {
+  const brief = readEditedBrief();
+  if (!brief) return;
+  if (!state.service) {
+    showToast("请通过本地服务地址打开工作台");
+    return;
+  }
+  if (brief.blockingQuestions.length) {
+    showToast("请先处理简报中的待确认问题");
+    elements.briefQuestions.focus();
+    return;
+  }
+  const allowExternalModel = brief.privacy === "restricted" && elements.provider.value === "openai"
+    ? window.confirm("这会把受限 Brief 和检索证据片段发送给外部模型，确认继续吗？")
+    : false;
+  if (brief.privacy === "restricted" && elements.provider.value === "openai" && !allowExternalModel) return;
+
+  setGenerationBusy(true);
+  elements.generationSection.classList.remove("hidden");
+  elements.artifactEditor.value = "正在检索知识库并生成工作稿…";
+  elements.generationSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  try {
+    const materialExcerpts = state.extractedText
+      .filter(item => item.text)
+      .slice(0, 6)
+      .map(item => ({ name: item.name, text: item.text.slice(0, 12000) }));
+    const response = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ brief: { ...brief, materialExcerpts }, provider: elements.provider.value, allowExternalModel, topK: 8 }),
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) throw new Error(payload.error || "生成失败");
+    state.currentBrief = { ...brief, state: "generated" };
+    state.lastArtifact = payload.result;
+    elements.artifactEditor.value = payload.result.markdown;
+    const mode = payload.result.provider === "openai" ? payload.result.model : "本地证据模式";
+    elements.generationMeta.textContent = `已生成 · ${mode} · 本地版本：${payload.result.artifact_path}`;
+    renderRetrievedEvidence(payload.evidence);
+    elements.stateBadge.textContent = "待人工审核";
+    persistGeneratedJob(state.currentBrief);
+    await loadArtifactHistory(brief.id);
+    showToast(`已生成并保存 ${payload.evidence.length} 条证据`);
+  } catch (error) {
+    elements.artifactEditor.value = "";
+    elements.generationMeta.textContent = error.message;
+    showToast(error.message);
+  } finally {
+    setGenerationBusy(false);
+  }
+}
+
+function setGenerationBusy(busy) {
+  elements.runButton.disabled = busy;
+  document.querySelector("#regenerateButton").disabled = busy;
+  elements.reviseButton.disabled = busy;
+  elements.saveArtifactButton.disabled = busy;
+  elements.approveArtifactButton.disabled = busy;
+  elements.serviceStatus.className = `local-status ${busy ? "busy" : "connected"}`;
+  if (busy) elements.serviceStatusText.textContent = "正在生成";
+  else if (state.service) elements.serviceStatusText.textContent = `本地服务 · ${state.service.knowledge.notes} 条笔记`;
+}
+
+async function saveArtifactVersion() {
+  const brief = readEditedBrief();
+  const markdown = elements.artifactEditor.value.trim();
+  if (!brief || !markdown) {
+    showToast("当前没有可保存的工作稿");
+    return;
+  }
+  await submitArtifactAction("/api/artifacts/save", { brief, markdown }, "正在保存版本", payload => {
+    state.lastArtifact = payload.result;
+    elements.generationMeta.textContent = `人工修改已保存 · ${payload.result.artifact_path}`;
+    renderArtifactHistory(payload.artifacts);
+    showToast("当前修改已保存为新版本");
+  });
+}
+
+async function reviseArtifact() {
+  const brief = readEditedBrief();
+  const markdown = elements.artifactEditor.value.trim();
+  const instruction = elements.revision.value.trim();
+  if (!brief || !markdown || !instruction) {
+    showToast("请填写具体修改要求");
+    elements.revision.focus();
+    return;
+  }
+  const allowExternalModel = brief.privacy === "restricted"
+    ? window.confirm("本轮修改会把受限工作稿发送给外部模型，确认继续吗？")
+    : false;
+  if (brief.privacy === "restricted" && !allowExternalModel) return;
+  await submitArtifactAction(
+    "/api/artifacts/revise",
+    { brief, markdown, instruction, allowExternalModel },
+    "正在按要求修改",
+    payload => {
+      state.lastArtifact = payload.result;
+      elements.artifactEditor.value = payload.result.markdown;
+      elements.revision.value = "";
+      elements.generationMeta.textContent = `修改完成 · ${payload.result.model} · ${payload.result.artifact_path}`;
+      renderArtifactHistory(payload.artifacts);
+      showToast("已生成新的修改版本");
+    },
+  );
+}
+
+async function approveArtifact() {
+  const brief = readEditedBrief();
+  const markdown = elements.artifactEditor.value.trim();
+  if (!brief || !markdown) {
+    showToast("当前没有可审核的工作稿");
+    return;
+  }
+  if (!window.confirm("确认当前事实、引用和表达已人工核验，并写入 Obsidian 40_Content？")) return;
+  await submitArtifactAction("/api/artifacts/approve", { brief, markdown }, "正在写入知识库", payload => {
+    state.lastArtifact = payload.result;
+    state.currentBrief = { ...brief, state: "approved", vaultPath: payload.vaultPath };
+    elements.stateBadge.textContent = "已审核";
+    elements.generationMeta.textContent = `已写入 Obsidian · ${payload.vaultPath}`;
+    renderArtifactHistory(payload.artifacts);
+    persistGeneratedJob(state.currentBrief);
+    showToast("审核稿已写入 Obsidian");
+  });
+}
+
+async function submitArtifactAction(path, body, busyText, onSuccess) {
+  if (!state.service) {
+    showToast("本地服务未连接");
+    return;
+  }
+  setGenerationBusy(true);
+  elements.serviceStatusText.textContent = busyText;
+  try {
+    const response = await fetch(path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) throw new Error(payload.error || "操作失败");
+    onSuccess(payload);
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    setGenerationBusy(false);
+  }
+}
+
+async function loadArtifactHistory(jobId, loadLatest = false) {
+  if (!state.service || !jobId) return;
+  try {
+    const response = await fetch(`/api/artifacts?jobId=${encodeURIComponent(jobId)}`, { cache: "no-store" });
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) throw new Error(payload.error || "读取版本失败");
+    renderArtifactHistory(payload.artifacts);
+    if (loadLatest && payload.artifacts.length) selectArtifact(payload.artifacts[0]);
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+function renderArtifactHistory(artifacts) {
+  elements.artifactHistory.innerHTML = artifacts.length ? artifacts.map((artifact, index) => `
+    <button class="artifact-version" type="button" data-artifact-index="${index}">
+      <strong>v${escapeHtml(artifact.version)} · ${artifact.status === "approved" ? "已审核" : artifact.provider === "human" ? "人工保存" : "生成稿"}</strong>
+      <span>${escapeHtml(formatDate(artifact.created_at))}${artifact.revision_instruction ? ` · ${escapeHtml(artifact.revision_instruction.slice(0, 24))}` : ""}</span>
+    </button>
+  `).join("") : '<p class="empty-copy">尚无版本</p>';
+  elements.artifactHistory.querySelectorAll("[data-artifact-index]").forEach(button => {
+    button.addEventListener("click", () => selectArtifact(artifacts[Number(button.dataset.artifactIndex)]));
+  });
+}
+
+function selectArtifact(artifact) {
+  elements.artifactEditor.value = artifact.markdown;
+  state.lastArtifact = artifact;
+  elements.generationMeta.textContent = `已载入 v${artifact.version} · ${artifact.artifact_path}`;
+}
+
+async function loadSignalRadar() {
+  if (!state.service) {
+    showToast("请先通过本地服务地址打开工作台");
+    return;
+  }
+  try {
+    const response = await fetch("/api/signals/status", { cache: "no-store" });
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) throw new Error(payload.error || "读取信号雷达失败");
+    renderSignalRadar(payload);
+  } catch (error) {
+    showToast(error.message);
+  }
+}
+
+async function collectSignals() {
+  if (!state.service) {
+    showToast("本地服务未连接");
+    return;
+  }
+  elements.collectSignalsButton.disabled = true;
+  elements.collectSignalsButton.textContent = "采集中…";
+  elements.signalResultMeta.textContent = "正在访问公开来源、评分去重并写入 Obsidian，请保持页面打开。";
+  try {
+    const response = await fetch("/api/signals/collect", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) throw new Error(payload.error || "采集失败");
+    renderSignalRadar(payload);
+    elements.signalResultMeta.textContent = `已写入 ${payload.report.note}，知识索引已更新。`;
+    showToast(`采集完成：${payload.report.signals} 条有效信号`);
+  } catch (error) {
+    elements.signalResultMeta.textContent = error.message;
+    showToast(error.message);
+  } finally {
+    elements.collectSignalsButton.disabled = false;
+    elements.collectSignalsButton.textContent = "立即采集";
+  }
+}
+
+async function addSignalSource() {
+  const sourceType = elements.signalSourceType.value;
+  const value = elements.signalSourceValue.value.trim();
+  if (!value) {
+    showToast("请输入账号、仓库或公开 URL");
+    elements.signalSourceValue.focus();
+    return;
+  }
+  elements.addSignalSourceButton.disabled = true;
+  try {
+    const response = await fetch("/api/signals/sources", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sourceType, value }),
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) throw new Error(payload.error || "添加来源失败");
+    elements.signalSourceValue.value = "";
+    renderSignalRadar(payload);
+    const manualOnly = ["x_account", "facebook_page"].includes(sourceType);
+    showToast(manualOnly ? "已加入观察名单；需公开帖子 URL 才能自动采集" : "来源已加入采集配置");
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    elements.addSignalSourceButton.disabled = false;
+  }
+}
+
+function renderSignalRadar(payload) {
+  const latest = payload.latest || {};
+  const signals = latest.signals || [];
+  const errors = latest.errors || [];
+  const configured = payload.configured || {};
+  elements.signalDate.textContent = latest.date || "尚未运行";
+  elements.signalTotal.textContent = String(latest.signal_count ?? signals.length);
+  elements.signalCount.textContent = String(latest.signal_count ?? signals.length);
+  elements.signalErrors.textContent = String(errors.length);
+  elements.signalSchedule.textContent = payload.scheduleInstalled ? "已安装" : "未安装";
+  elements.signalBoundary.textContent = payload.accessBoundary;
+  const lines = [
+    ["X 观察账号", configured.xAccounts],
+    ["GitHub 用户", configured.githubUsers],
+    ["GitHub 仓库", configured.githubRepositories],
+    ["RSS", configured.feeds],
+    ["公开帖子", configured.publicPostUrls],
+  ];
+  elements.signalWatchlist.innerHTML = lines.map(([label, values]) => `
+    <div class="watchlist-line"><strong>${label}：</strong>${values?.length ? escapeHtml(values.slice(0, 8).join("、")) + (values.length > 8 ? ` 等 ${values.length} 个` : "") : "未配置"}</div>
+  `).join("");
+  elements.signalResults.innerHTML = signals.length ? signals.slice(0, 30).map(signal => `
+    <article class="signal-item">
+      <div class="signal-item-head">
+        <h4>${escapeHtml(signal.title)}</h4>
+        <span class="signal-score">${signal.business_value_score} 分</span>
+      </div>
+      <p>${escapeHtml(signal.summary || signal.raw_excerpt || "无摘要")}</p>
+      <div class="signal-meta">${escapeHtml(signal.platform)} · ${escapeHtml(signal.author || signal.company || "未识别")} · ${escapeHtml((signal.categories || []).join(" / ") || "待分类")} · <a href="${escapeHtml(signal.source_url)}" target="_blank" rel="noopener noreferrer">原始链接</a></div>
+    </article>
+  `).join("") : '<p class="empty-copy">尚无符合阈值的公开信号。可添加 RSS、GitHub 或具体公开帖子 URL 后采集。</p>';
+  elements.signalErrorList.innerHTML = errors.length
+    ? `<strong>采集异常</strong><br>${errors.slice(0, 12).map(error => escapeHtml(error)).join("<br>")}`
+    : "";
+}
+
+function renderRetrievedEvidence(evidence) {
+  elements.retrievedEvidence.innerHTML = evidence.length ? evidence.map(item => `
+    <div class="evidence-item">
+      <strong>${escapeHtml(item.title)}</strong>
+      <span>${escapeHtml(item.excerpt)}</span>
+      <em>${escapeHtml(item.citation)}</em>
+    </div>
+  `).join("") : '<p class="empty-copy">未命中直接证据，请调整检索词或补充知识库。</p>';
+}
+
+function downloadArtifact() {
+  const markdown = elements.artifactEditor.value.trim();
+  if (!markdown) {
+    showToast("当前没有可下载的工作稿");
+    return;
+  }
+  const brief = readEditedBrief() || { goal: "content-draft" };
+  const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `${safeFileName(brief.goal)}-内容工作稿.md`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+  showToast("当前工作稿已下载");
+}
+
+function persistGeneratedJob(brief) {
+  const saved = { ...brief, updatedAt: new Date().toISOString(), artifactPath: state.lastArtifact?.artifact_path };
+  const existingIndex = state.jobs.findIndex(job => job.id === saved.id);
+  if (existingIndex >= 0) state.jobs[existingIndex] = saved;
+  else state.jobs.unshift(saved);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.jobs.slice(0, 50)));
+  renderJobs();
 }
 
 function renderEvidence() {
@@ -377,7 +777,7 @@ function formatBytes(bytes) {
   return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
 }
 function formatDate(value) { return new Intl.DateTimeFormat("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value)); }
-function stateLabel(value) { return ({ brief_review: "简报待确认", ready: "可开始分析", needs_input: "需要补充信息", exported: "已导出", archived: "已归档" })[value] || value; }
+function stateLabel(value) { return ({ brief_review: "简报待确认", ready: "可开始分析", needs_input: "需要补充信息", generated: "待人工审核", approved: "已审核", exported: "已导出", archived: "已归档" })[value] || value; }
 function loadJobs() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
   catch (_) { return []; }
@@ -394,3 +794,4 @@ function showToast(message) {
 renderJobs();
 updateContextEstimate();
 updatePrivacyState();
+checkService();

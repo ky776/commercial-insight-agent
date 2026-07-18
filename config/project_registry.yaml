@@ -1,0 +1,54 @@
+version: 1
+
+projects:
+  - id: project-a
+    name: 待补充-A项目
+    status: active
+    local_path: null
+    repository: null
+    vault_path: 60_Projects/project-a
+    sensitivity: internal
+    initial_manual_scope:
+      - codex
+      - obsidian
+      - github
+
+  - id: project-b
+    name: 待补充-B项目
+    status: active
+    local_path: null
+    repository: null
+    vault_path: 60_Projects/project-b
+    sensitivity: internal
+    initial_manual_scope:
+      - environment_variables
+      - configuration
+
+  - id: project-c
+    name: 待补充-C项目
+    status: active
+    local_path: null
+    repository: null
+    vault_path: 60_Projects/project-c
+    sensitivity: internal
+    initial_manual_scope:
+      - agent_creation
+      - skills
+      - tools
+
+  - id: project-d
+    name: 待补充-D项目
+    status: active
+    local_path: null
+    repository: null
+    vault_path: 60_Projects/project-d
+    sensitivity: internal
+    initial_manual_scope:
+      - agent_creation
+      - agent_tuning
+      - evaluation
+
+rules:
+  secret_values_allowed: false
+  require_source_links: true
+  require_verified_at_for_manuals: true

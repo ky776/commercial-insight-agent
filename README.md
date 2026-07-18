@@ -120,6 +120,7 @@ python3 scripts/social_collector.py
 ```
 
 See `docs/social_signal_pipeline.md` for the watchlist, feature schema, access boundary, and daily macOS schedule.
+The local workspace also exposes this pipeline through the `信号雷达` navigation view.
 
 ## Founder Workspace Design
 
@@ -129,10 +130,17 @@ See `docs/social_signal_pipeline.md` for the watchlist, feature schema, access b
 - `docs/video_provider.md`: MVP video boundary and future provider contract
 - `docs/ui_spec.md`: local workbench information architecture and visual rules
 - `docs/global_brief_router.md`: install the token-saving brief router globally
+- `docs/global_knowledge_system.md`: conversation knowledge, four-project manuals, batch material ingestion, and privacy boundaries
 
 ## Local Workspace Prototype
 
-Open `web/index.html` directly in a browser to try the first local workflow: add text, a URL, or local files; generate an editable brief; save it in the browser; and export Markdown. No selected file is uploaded.
+Start the local workspace service to use Obsidian retrieval and content generation:
+
+```bash
+./scripts/run_workspace.sh
+```
+
+Then open `http://127.0.0.1:4173`. The workflow supports editable briefs, cited local retrieval, evidence-only drafts, optional model generation, scoped revisions, version history, human approval, Obsidian write-back, and Markdown export. See `docs/local_workspace_service.md` for privacy and storage boundaries.
 
 ## Primary Channels
 

@@ -18,7 +18,7 @@
         </div>
       </div>
       <div class="topbar-actions">
-        <span class="local-status"><span class="status-dot"></span>本地模式</span>
+        <span class="local-status" id="serviceStatus"><span class="status-dot"></span><span id="serviceStatusText">检查本地服务</span></span>
         <button class="button secondary" id="newJobButton" type="button">新建任务</button>
       </div>
     </header>
@@ -29,6 +29,7 @@
           <button class="nav-item active" type="button" data-view="inbox" aria-current="page"><span>收件箱</span><span class="nav-count" id="jobCount">0</span></button>
           <button class="nav-item" type="button" data-view="active"><span>进行中</span><span class="nav-count" id="activeCount">0</span></button>
           <button class="nav-item" type="button" data-view="drafts"><span>内容草稿</span></button>
+          <button class="nav-item" type="button" data-view="signals"><span>信号雷达</span><span class="nav-count" id="signalCount">0</span></button>
           <button class="nav-item" type="button" data-view="knowledge"><span>知识库</span></button>
           <button class="nav-item" type="button" data-view="exports"><span>导出记录</span></button>
         </nav>
@@ -60,6 +61,58 @@
           <li>导出</li>
         </ol>
 
+        <section class="signal-section hidden" id="signalSection" aria-labelledby="signalHeading">
+          <div class="section-heading">
+            <div>
+              <span class="eyebrow">公开信息源</span>
+              <h2 id="signalHeading">AI 与商业信号雷达</h2>
+              <p id="signalBoundary">GitHub、RSS 与公开帖子每日汇总；X 账号观察名单不等于自动抓取。</p>
+            </div>
+            <button class="button primary" id="collectSignalsButton" type="button">立即采集</button>
+          </div>
+
+          <dl class="signal-metrics">
+            <div><dt>最近日期</dt><dd id="signalDate">尚未运行</dd></div>
+            <div><dt>有效信号</dt><dd id="signalTotal">0</dd></div>
+            <div><dt>采集异常</dt><dd id="signalErrors">0</dd></div>
+            <div><dt>每日定时</dt><dd id="signalSchedule">未安装</dd></div>
+          </dl>
+
+          <div class="signal-config">
+            <div>
+              <h3>增加观察来源</h3>
+              <div class="source-add-row">
+                <select id="signalSourceType" aria-label="来源类型">
+                  <option value="public_post_url">公开帖子 URL</option>
+                  <option value="github_user">GitHub 用户</option>
+                  <option value="github_repository">GitHub 仓库</option>
+                  <option value="feed">RSS / Atom</option>
+                  <option value="x_account">X 观察账号</option>
+                  <option value="facebook_page">Facebook 观察主页</option>
+                </select>
+                <input id="signalSourceValue" aria-label="来源内容" placeholder="粘贴公开 URL 或输入账号" />
+                <button class="button secondary" id="addSignalSourceButton" type="button">添加</button>
+              </div>
+              <p class="signal-note">X/Facebook 账号用于人工发现。没有授权 API 时，请添加具体公开帖子 URL。</p>
+            </div>
+            <div>
+              <h3>当前观察范围</h3>
+              <div id="signalWatchlist" class="watchlist-summary"><p class="empty-copy">正在读取配置</p></div>
+            </div>
+          </div>
+
+          <div class="signal-results-heading">
+            <div>
+              <h3>最近一次结果</h3>
+              <p id="signalResultMeta">采集后写入 Obsidian `10_Sources/Social` 并进入知识索引。</p>
+            </div>
+          </div>
+          <div id="signalResults" class="signal-results">
+            <p class="empty-copy">尚无采集结果</p>
+          </div>
+          <div id="signalErrorList" class="signal-error-list"></div>
+        </section>
+
         <section class="input-section" aria-labelledby="inputHeading">
           <div class="section-heading">
             <div>
@@ -79,9 +132,9 @@
 
           <div class="source-row">
             <label class="drop-zone" id="dropZone" for="fileInput">
-              <input id="fileInput" type="file" multiple accept=".md,.txt,.json,.csv,.pdf,.png,.jpg,.jpeg,.gif,.mp3,.wav,.mp4,.mov" />
+              <input id="fileInput" type="file" multiple accept=".md,.txt,.json,.csv,.pdf" />
               <strong>选择文件或拖到这里</strong>
-              <span>支持文本、PDF、图片、音频和视频；原文件不会上传</span>
+              <span>当前直接解析 Markdown、TXT、JSON、CSV；PDF 先进入本地知识库</span>
             </label>
             <div class="source-fields">
               <label>
@@ -171,10 +224,60 @@
             </label>
           </div>
 
-          <div class="brief-actions">
-            <button class="button primary" id="saveButton" type="button">保存任务</button>
-            <button class="button secondary" id="exportButton" type="button">导出 Markdown</button>
-            <button class="button text-button" id="resetButton" type="button">重新整理</button>
+          <div class="generation-config">
+            <label class="provider-field">
+              <span>生成方式</span>
+              <select id="providerInput">
+                <option value="auto">自动选择</option>
+                <option value="evidence">仅本地证据</option>
+                <option value="openai">云端推理模型</option>
+              </select>
+            </label>
+            <div class="brief-actions">
+              <button class="button primary" id="runButton" type="button">检索并生成</button>
+              <button class="button secondary" id="saveButton" type="button">保存任务</button>
+              <button class="button secondary" id="exportButton" type="button">导出 Markdown</button>
+              <button class="button text-button" id="resetButton" type="button">重新整理</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="generation-section hidden" id="generationSection" aria-labelledby="generationHeading">
+          <div class="section-heading">
+            <div>
+              <h2 id="generationHeading">内容工作稿</h2>
+              <p id="generationMeta">检索知识库后生成，可直接修改。事实与来源仍需人工核验。</p>
+            </div>
+          </div>
+
+          <div class="generation-layout">
+            <div>
+              <label class="field-label" for="artifactEditor">Markdown 草稿</label>
+              <textarea id="artifactEditor" class="artifact-editor" rows="24" placeholder="确认简报后，点击“检索并生成”。"></textarea>
+              <div class="revision-box">
+                <label for="revisionInput">修改要求</label>
+                <div class="revision-row">
+                  <input id="revisionInput" placeholder="例如：保留论点，把开头改成品牌老板能感知的成本问题" />
+                  <button class="button secondary" id="reviseButton" type="button">按要求修改</button>
+                </div>
+              </div>
+              <div class="brief-actions">
+                <button class="button primary" id="approveArtifactButton" type="button">审核通过</button>
+                <button class="button secondary" id="saveArtifactButton" type="button">保存当前版本</button>
+                <button class="button secondary" id="downloadArtifactButton" type="button">下载</button>
+                <button class="button secondary" id="regenerateButton" type="button">生成新版本</button>
+              </div>
+            </div>
+            <aside class="retrieved-evidence" aria-label="知识库证据">
+              <div class="section-label">知识库证据</div>
+              <div id="retrievedEvidenceList" class="evidence-list">
+                <p class="empty-copy">尚未检索</p>
+              </div>
+              <div class="artifact-history-heading section-label">版本历史</div>
+              <div id="artifactHistory" class="artifact-history">
+                <p class="empty-copy">尚无版本</p>
+              </div>
+            </aside>
           </div>
         </section>
       </main>

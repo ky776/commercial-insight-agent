@@ -1,0 +1,37 @@
+version: 1
+
+required:
+  - id
+  - project_id
+  - manual_type
+  - title
+  - status
+  - verified_at
+  - sources
+
+manual_types:
+  - project_overview
+  - install_and_start
+  - codex_obsidian_github
+  - environment_variables
+  - agent_creation
+  - agent_tuning
+  - evaluation
+  - troubleshooting
+
+fields:
+  prerequisites: required software, access, files, and knowledge
+  steps: ordered executable operations
+  environment_variables: name, purpose, source, location, required, and secret flag
+  verification: commands and expected non-secret output
+  troubleshooting: symptom, cause, diagnosis, and resolution
+  sources: repository files, verified conversations, or decisions
+  status: draft, verified, outdated, or archived
+  verified_at: last successful execution date
+  sensitivity: public, internal, or restricted
+
+forbidden:
+  - secret_value
+  - access_token
+  - password
+  - customer_raw_data

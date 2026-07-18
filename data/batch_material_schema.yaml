@@ -1,0 +1,49 @@
+version: 1
+
+required:
+  - id
+  - source_file
+  - content_hash
+  - media_type
+  - sensitivity
+  - parse_status
+  - review_status
+
+media_types:
+  - pdf
+  - docx
+  - pptx
+  - xlsx
+  - image
+  - audio
+  - video
+  - markdown
+  - text
+
+fields:
+  source_file: local source path
+  content_hash: SHA-256 used for deduplication and parse cache
+  parser_name: parser or OCR implementation
+  parser_version: invalidates stale extraction cache
+  extracted_text_path: local-only normalized text
+  title: inferred or source title
+  publisher: company, institution, author, or unknown
+  published_at: source publication date
+  document_class: company_internal, industry_report, customer_material, public_research, or other
+  sensitivity: public, internal, or restricted
+  industries: normalized industry tags
+  companies: mentioned companies
+  business_chains: advertising, content, creator, transaction, CRM, settlement, attribution, or other
+  facts: claims with page or section evidence
+  opinions: source opinions separated from facts
+  inferred_insights: model inferences marked as inference
+  unresolved_claims: claims requiring verification
+  relationships: subject, predicate, object, and source location
+  target_vault_path: proposed destination pending review
+  parse_status: pending, parsed, partial, failed, or duplicate
+  review_status: pending, approved, rejected, or needs_redaction
+
+routing:
+  public: ../commercial-insight-vault/10_Sources/
+  internal: ../commercial-insight-vault/10_Sources/ after review
+  restricted: ../commercial-insight-vault/95_Private/Company_Materials/

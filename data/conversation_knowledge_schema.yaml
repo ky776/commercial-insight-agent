@@ -1,0 +1,53 @@
+version: 1
+
+required:
+  - id
+  - source_platform
+  - source_conversation_id
+  - source_date
+  - question
+  - question_class
+  - sensitivity
+  - review_status
+
+source_platforms:
+  - chatgpt
+  - codex
+  - manual
+
+question_classes:
+  - strategy
+  - product
+  - engineering
+  - configuration
+  - operations
+  - content
+  - customer
+  - finance
+  - career
+  - unresolved
+
+fields:
+  id: stable hash of source conversation and turn
+  source_conversation_id: stable export or task identifier
+  source_turn_ids: exact source turn identifiers
+  source_date: original conversation date
+  question: normalized user question preserving intent
+  question_class: primary classification
+  projects: linked project IDs
+  topics: reusable concepts
+  confirmed_conclusions: conclusions explicitly established in the conversation
+  decisions: decisions with rationale and status
+  action_items: owner, action, due date, and status
+  unresolved_questions: gaps that still require evidence or a decision
+  reusable_preferences: candidate preferences requiring confirmation before persistence
+  entities: people, companies, platforms, tools, and concepts
+  relationships: subject, predicate, object, and evidence turn
+  sensitivity: public, internal, or restricted
+  review_status: draft, reviewed, or rejected
+  source_export_hash: SHA-256 of the source export
+
+storage:
+  raw_exports: ../commercial-insight-vault/95_Private/Conversation_Exports/
+  normalized_turns: local/conversations/
+  reviewed_notes: ../commercial-insight-vault/70_Conversations/

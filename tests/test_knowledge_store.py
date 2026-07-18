@@ -14,6 +14,7 @@ class KnowledgeStoreTest(unittest.TestCase):
         self.database = self.root / "index.sqlite3"
         (self.vault / "10_Sources").mkdir(parents=True)
         (self.vault / "30_Insights").mkdir(parents=True)
+        (self.vault / "95_Private").mkdir(parents=True)
         (self.vault / "10_Sources" / "广告成本.md").write_text(
             """---
 type: source
@@ -40,14 +41,18 @@ confidence: medium
 """,
             encoding="utf-8",
         )
+        (self.vault / "95_Private" / "内部归因.md").write_text(
+            "# 内部归因材料\n## 限制信息\n广告归因内部测试材料。",
+            encoding="utf-8",
+        )
 
     def tearDown(self):
         self.temporary.cleanup()
 
     def test_index_and_chinese_search(self):
         report = rebuild_index(self.vault, self.database)
-        self.assertEqual(report["notes"], 2)
-        self.assertGreaterEqual(report["chunks"], 2)
+        self.assertEqual(report["notes"], 3)
+        self.assertGreaterEqual(report["chunks"], 3)
         self.assertTrue(index_status(self.database)["ready"])
 
         results = search_index(self.database, "广告效果 代理商透明度", top_k=3)
@@ -60,6 +65,12 @@ confidence: medium
         results = search_index(self.database, "企业号 内容生态", note_type="insight")
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["type"], "insight")
+
+    def test_private_directory_defaults_to_restricted(self):
+        rebuild_index(self.vault, self.database)
+        results = search_index(self.database, "内部归因")
+        self.assertTrue(results)
+        self.assertEqual(results[0]["sensitivity"], "restricted")
 
     def test_brief_query_uses_source_filename(self):
         brief = parse_brief("""# 分析这份报告，提炼核心观点，生成自媒体内容

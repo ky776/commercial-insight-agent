@@ -1,0 +1,30 @@
+version: 1
+
+classes:
+  public:
+    git_sync: allowed
+    external_model: allowed
+    human_review: required_before_publish
+  internal:
+    git_sync: allowed_after_review
+    external_model: allowed_when_task_requires
+    human_review: required
+  restricted:
+    git_sync: forbidden
+    external_model: forbidden_by_default
+    human_review: required
+
+local_only_paths:
+  - ../commercial-insight-vault/95_Private/
+  - local/
+
+restricted_material_examples:
+  - former_employer_internal_material
+  - customer_raw_data
+  - credentials
+  - contracts
+  - unpublished_financial_data
+
+promotion_rule: >-
+  Restricted source material may produce a synchronized insight only after
+  de-identification, removal of confidential details, and explicit human review.

@@ -42,6 +42,24 @@ python3 scripts/social_collector.py
 
 Do not commit the token or place it in the watchlist.
 
+## Frontend Signal Radar
+
+Start the local workspace and open `信号雷达` in the left navigation:
+
+```bash
+./scripts/run_workspace.sh
+```
+
+The radar can:
+
+- Show the current X/Facebook discovery watchlist, GitHub sources, feeds, and public post URLs
+- Add a GitHub user or repository, RSS/Atom feed, public post URL, or discovery account
+- Run collection on demand
+- Display scored signals, source links, and collection errors
+- Rebuild the Obsidian knowledge index after a successful run
+
+Adding an X or Facebook account does not create an unsupported scraper. It records a discovery target. Add a specific publicly readable post URL, a compliant RSS source, or an authorized API before expecting automatic items from that account.
+
 ## Add Public X Or Facebook Posts
 
 Edit `config/social_watchlist.json` and add specific URLs to `public_post_urls`. The page must be readable without login and expose public metadata. If the platform returns only a login page, the collector records an error and stops processing that URL.
