@@ -1,17 +1,20 @@
-# Local Founder Workspace Prototype
+# Local Founder Workspace
 
-Open `index.html` directly in a browser. The prototype has no network dependencies and does not upload selected files.
+Start the local service from the repository root:
 
-Implemented flow:
-
-```text
-text / URL / local file metadata
-  -> mode and privacy selection
-  -> compact editable task brief
-  -> browser-local task save
-  -> Markdown export
+```bash
+./scripts/run_workspace.sh
 ```
 
-Text-like files up to 2 MB are read locally for brief generation. PDF, image, audio, and video files contribute metadata only in this prototype.
+Open `http://127.0.0.1:4173`. Opening `index.html` directly only provides an offline layout preview; knowledge retrieval, model calls, uploads, and rendering require the local service.
 
-Browser local storage is temporary prototype state, not the final SQLite storage defined in `docs/storage_architecture.md`.
+The interface uses a two-level workbench:
+
+- The outer workspace shows recent jobs, operating status, signal counts, and module entry points.
+- A content job follows `素材 -> 任务简报 -> 生成内容 -> 审核交付`.
+- A video project follows `脚本方案 -> 真人素材 -> Seedance 辅助镜头 -> 合成导出`.
+- Signal collection and Obsidian imports stay available as separate modules.
+
+Human A-roll and audio are stored locally. Finished 9:16 MP4 files are written to `local/projects/<project-id>/exports/`. Seedance is only called after a cost confirmation and its completed clips are stored under `local/video_outputs/`.
+
+Browser local storage contains lightweight task summaries. Source files, parse caches, generated artifacts, and finished media use repository-local ignored directories or the private sibling Obsidian Vault.

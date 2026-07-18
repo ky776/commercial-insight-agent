@@ -33,6 +33,7 @@ from social_collector import CollectionError, collect  # noqa: E402
 from social_service import add_watch_source, default_social_paths, radar_status  # noqa: E402
 from conversation_importer import import_export  # noqa: E402
 from video_generator import VideoGenerationError, create_seedance_job, get_video_path, refresh_seedance_job  # noqa: E402
+from video_production import VideoProductionError, get_finished_video, render_finished_video  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -82,6 +83,12 @@ def health_payload() -> dict:
             "externalApiAnalysis": True,
             "inlineApiBytes": 20_000_000,
         },
+        "production": {
+            "humanAroll": True,
+            "seedanceBroll": True,
+            "burnedCaptions": True,
+            "finishedMp4": True,
+        },
     }
 
 
@@ -124,6 +131,13 @@ class WorkspaceHandler(BaseHTTPRequestHandler):
             try:
                 self._serve_file(get_video_path(task_id, ROOT), "video/mp4")
             except VideoGenerationError as exc:
+                self._json(404, {"ok": False, "error": str(exc)})
+            return
+        if path == "/api/production/file":
+            production_id = parse_qs(parsed.query).get("id", [""])[0]
+            try:
+                self._serve_file(get_finished_video(production_id, ROOT), "video/mp4")
+            except VideoProductionError as exc:
                 self._json(404, {"ok": False, "error": str(exc)})
             return
         if path == "/api/signals/status":
@@ -194,6 +208,16 @@ class WorkspaceHandler(BaseHTTPRequestHandler):
                 job = refresh_seedance_job(str(payload.get("id", "")), root=ROOT)
                 self._json(200, {"ok": True, "job": job})
                 return
+            if path == "/api/production/render":
+                project = render_finished_video(
+                    str(payload.get("contentHash", "")),
+                    str(payload.get("script", "")),
+                    production_id=str(payload.get("productionId", "finished-video")),
+                    broll_task_ids=[str(item) for item in payload.get("brollTaskIds", []) if str(item).strip()],
+                    root=ROOT,
+                )
+                self._json(200, {"ok": True, "project": project})
+                return
             brief = payload.get("brief")
             if not isinstance(brief, dict):
                 raise ValueError("缺少 brief")
@@ -260,6 +284,8 @@ class WorkspaceHandler(BaseHTTPRequestHandler):
             self._json(502, {"ok": False, "error": str(exc)})
         except VideoGenerationError as exc:
             self._json(502, {"ok": False, "error": str(exc)})
+        except VideoProductionError as exc:
+            self._json(500, {"ok": False, "error": str(exc)})
         except CollectionError as exc:
             self._json(502, {"ok": False, "error": str(exc)})
         except MaterialError as exc:

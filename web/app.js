@@ -1,5 +1,5 @@
 const STORAGE_KEY = "commercial-insight-founder-jobs-v1";
-const state = { files: [], extractedText: [], materialResults: {}, captureId: createId(), conversationFile: null, currentBrief: null, currentView: "inbox", jobs: loadJobs(), service: null, lastArtifact: null };
+const state = { files: [], extractedText: [], materialResults: {}, captureId: createId(), conversationFile: null, currentBrief: null, currentView: "home", contentStep: 1, videoStage: 1, jobs: loadJobs(), service: null, lastArtifact: null };
 
 const elements = {
   request: document.querySelector("#requestInput"),
@@ -79,6 +79,30 @@ const elements = {
   videoJobStatus: document.querySelector("#videoJobStatus"),
   videoJobMeta: document.querySelector("#videoJobMeta"),
   openVideoLink: document.querySelector("#openVideoLink"),
+  arollFileInput: document.querySelector("#arollFileInput"),
+  arollFileName: document.querySelector("#arollFileName"),
+  productionBroll: document.querySelector("#productionBrollInput"),
+  productionScript: document.querySelector("#productionScriptInput"),
+  productionStatus: document.querySelector("#productionStatus"),
+  productionMeta: document.querySelector("#productionMeta"),
+  renderProductionButton: document.querySelector("#renderProductionButton"),
+  useDraftForProductionButton: document.querySelector("#useDraftForProductionButton"),
+  openProductionLink: document.querySelector("#openProductionLink"),
+  appShell: document.querySelector("#appShell"),
+  homeSection: document.querySelector("#homeSection"),
+  contentModule: document.querySelector("#contentModule"),
+  inputSection: document.querySelector("#inputSection"),
+  videoStudioSection: document.querySelector("#videoStudioSection"),
+  contentStepper: document.querySelector("#contentStepper"),
+  videoStepper: document.querySelector("#videoStepper"),
+  evidencePanel: document.querySelector("#evidencePanel"),
+  jobFilter: document.querySelector("#jobFilterInput"),
+  homeJobCount: document.querySelector("#homeJobCount"),
+  homeActiveCount: document.querySelector("#homeActiveCount"),
+  homeNoteCount: document.querySelector("#homeNoteCount"),
+  homeSignalCount: document.querySelector("#homeSignalCount"),
+  homeServiceSummary: document.querySelector("#homeServiceSummary"),
+  productionArollSummary: document.querySelector("#productionArollSummary"),
 };
 
 const deliverableLabels = {
@@ -103,13 +127,47 @@ elements.addSignalSourceButton.addEventListener("click", addSignalSource);
 elements.importConversationButton.addEventListener("click", importConversation);
 elements.createVideoButton.addEventListener("click", createSeedanceVideo);
 elements.refreshVideoButton.addEventListener("click", refreshSeedanceVideo);
+elements.arollFileInput.addEventListener("change", event => uploadAroll(event.target.files[0] || null));
+elements.useDraftForProductionButton.addEventListener("click", () => {
+  elements.productionScript.value = elements.artifactEditor.value.trim();
+  showToast("当前工作稿已填入字幕逐字稿，请删除非口播段落");
+});
+elements.renderProductionButton.addEventListener("click", renderFinishedProduction);
 elements.conversationFileInput.addEventListener("change", event => {
   state.conversationFile = event.target.files[0] || null;
   elements.conversationFileName.textContent = state.conversationFile ? state.conversationFile.name : "选择 ChatGPT/Codex 导出文件";
 });
-document.querySelector("#resetButton").addEventListener("click", () => elements.briefSection.classList.add("hidden"));
+document.querySelector("#resetButton").addEventListener("click", () => showContentStep(1));
 document.querySelector("#newJobButton").addEventListener("click", resetWorkspace);
 document.querySelectorAll(".nav-item").forEach(button => button.addEventListener("click", () => changeView(button)));
+document.querySelectorAll("[data-go-view]").forEach(button => button.addEventListener("click", () => {
+  if (button.dataset.goView === "content") resetWorkspace();
+  else navigateTo(button.dataset.goView);
+}));
+document.querySelector("#sendToVideoButton").addEventListener("click", () => {
+  const draft = elements.artifactEditor.value.trim();
+  if (draft) elements.productionScript.value = draft;
+  navigateTo("video");
+  showVideoStage(1);
+});
+document.querySelector("#videoNextToAroll").addEventListener("click", () => {
+  if (!elements.productionScript.value.trim()) {
+    showToast("请先确认口播逐字稿");
+    elements.productionScript.focus();
+    return;
+  }
+  showVideoStage(2);
+});
+document.querySelector("#videoNextToBroll").addEventListener("click", () => {
+  if (!state.arollMaterial) {
+    showToast("请先上传真人口播视频或录音");
+    return;
+  }
+  showVideoStage(3);
+});
+document.querySelector("#videoNextToRender").addEventListener("click", () => showVideoStage(4));
+document.querySelectorAll("[data-video-back]").forEach(button => button.addEventListener("click", () => showVideoStage(Number(button.dataset.videoBack))));
+elements.jobFilter.addEventListener("change", renderJobs);
 elements.fileInput.addEventListener("change", event => handleFiles([...event.target.files]));
 elements.fileList.addEventListener("click", event => {
   const button = event.target.closest("[data-analyze-material]");
@@ -330,11 +388,11 @@ function generateBrief() {
   };
 
   populateBrief(state.currentBrief);
-  elements.briefSection.classList.remove("hidden");
+  showContentStep(2);
   elements.stateBadge.textContent = "简报待确认";
   elements.workspaceTitle.textContent = goal.slice(0, 28);
   elements.retrievalEstimate.textContent = `${Math.min(Math.max(queries.length * 2, 4), 8)} 个知识片段`;
-  elements.briefSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  elements.contentModule.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function populateBrief(brief) {
@@ -393,24 +451,16 @@ function exportMarkdown() {
 }
 
 function renderJobs() {
+  const activeJobs = state.jobs.filter(job => !["exported", "archived", "approved"].includes(job.state));
   elements.jobCount.textContent = state.jobs.length;
-  elements.activeCount.textContent = state.jobs.filter(job => !["exported", "archived"].includes(job.state)).length;
-  const visibleJobs = filterJobs(state.jobs, state.currentView);
-  const viewLabels = {
-    inbox: "最近任务",
-    active: "进行中",
-    drafts: "内容草稿",
-    signals: "信号雷达",
-    knowledge: "知识库状态",
-    exports: "导出记录",
-  };
-  elements.recentHeading.textContent = viewLabels[state.currentView];
+  elements.activeCount.textContent = activeJobs.length;
+  elements.homeJobCount.textContent = state.jobs.length;
+  elements.homeActiveCount.textContent = activeJobs.length;
+  const filter = state.currentView === "content" ? elements.jobFilter.value : "content";
+  const visibleJobs = filterJobs(state.jobs, filter);
+  elements.recentHeading.textContent = state.currentView === "content" ? "最近内容任务" : "最近任务";
   if (!visibleJobs.length) {
-    const copy = state.currentView === "knowledge"
-      ? "知识素材由本地 Obsidian Vault 管理"
-      : state.currentView === "signals" ? "观察名单与采集结果显示在主工作区"
-      : "当前视图还没有任务";
-    elements.recentJobs.innerHTML = `<p class="empty-copy">${copy}</p>`;
+    elements.recentJobs.innerHTML = '<p class="empty-copy">当前还没有任务</p>';
     return;
   }
   elements.recentJobs.innerHTML = visibleJobs.slice(0, 8).map(job => `
@@ -423,47 +473,74 @@ function renderJobs() {
 }
 
 function changeView(button) {
-  state.currentView = button.dataset.view;
+  navigateTo(button.dataset.view);
+}
+
+function navigateTo(view) {
+  state.currentView = view;
   document.querySelectorAll(".nav-item").forEach(item => {
-    const active = item === button;
+    const active = item.dataset.view === view;
     item.classList.toggle("active", active);
     if (active) item.setAttribute("aria-current", "page");
     else item.removeAttribute("aria-current");
   });
-  const signalView = state.currentView === "signals";
-  const knowledgeView = state.currentView === "knowledge";
-  const alternateView = signalView || knowledgeView;
-  elements.signalSection.classList.toggle("hidden", !signalView);
-  elements.knowledgeSystemSection.classList.toggle("hidden", !knowledgeView);
-  document.querySelector(".stepper").classList.toggle("hidden", alternateView);
-  elements.request.closest(".input-section").classList.toggle("hidden", alternateView);
-  if (signalView) {
-    elements.briefSection.classList.add("hidden");
-    elements.generationSection.classList.add("hidden");
-    elements.workspaceTitle.textContent = "公开信号雷达";
-    elements.stateBadge.textContent = "公开来源";
+  elements.homeSection.classList.toggle("hidden", view !== "home");
+  elements.contentModule.classList.toggle("hidden", view !== "content");
+  elements.videoStudioSection.classList.toggle("hidden", view !== "video");
+  elements.signalSection.classList.toggle("hidden", view !== "signals");
+  elements.knowledgeSystemSection.classList.toggle("hidden", view !== "knowledge");
+  elements.evidencePanel.classList.toggle("hidden", view !== "content");
+  elements.appShell.classList.toggle("without-evidence", view !== "content");
+
+  const headings = {
+    home: ["个人工作台", "今日工作", "本地优先"],
+    content: ["内容任务", state.currentBrief?.goal?.slice(0, 28) || "新建内容任务", state.currentBrief ? stateLabel(state.currentBrief.state) : "待输入"],
+    video: ["成片生产", "真人口播成片", elements.productionStatus.textContent],
+    signals: ["公开信息源", "AI 与商业信号雷达", "公开来源"],
+    knowledge: ["Obsidian Vault", "知识资料导入", "本地优先"],
+  };
+  const [eyebrow, title, badge] = headings[view] || headings.home;
+  document.querySelector("#workspaceEyebrow").textContent = eyebrow;
+  elements.workspaceTitle.textContent = title;
+  elements.stateBadge.textContent = badge;
+
+  if (view === "signals") {
     loadSignalRadar();
-  } else if (knowledgeView) {
-    elements.briefSection.classList.add("hidden");
-    elements.generationSection.classList.add("hidden");
-    elements.workspaceTitle.textContent = "全局知识系统";
-    elements.stateBadge.textContent = "本地优先";
+  } else if (view === "knowledge") {
     loadConversationImports();
-  } else {
-    if (state.currentBrief) elements.briefSection.classList.remove("hidden");
-    if (state.lastArtifact) elements.generationSection.classList.remove("hidden");
-    elements.workspaceTitle.textContent = state.currentBrief ? state.currentBrief.goal.slice(0, 28) : "整理新素材";
-    elements.stateBadge.textContent = state.currentBrief ? stateLabel(state.currentBrief.state) : "待输入";
   }
   renderJobs();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function filterJobs(jobs, view) {
   if (view === "active") return jobs.filter(job => !["exported", "archived"].includes(job.state));
   if (view === "drafts") return jobs.filter(job => ["brief_review", "ready", "needs_input", "generated"].includes(job.state));
   if (view === "exports") return jobs.filter(job => job.state === "exported");
-  if (["knowledge", "signals"].includes(view)) return [];
   return jobs;
+}
+
+function showContentStep(step) {
+  state.contentStep = step;
+  elements.inputSection.classList.toggle("hidden", step !== 1);
+  elements.briefSection.classList.toggle("hidden", step !== 2);
+  elements.generationSection.classList.toggle("hidden", step < 3);
+  elements.contentStepper.querySelectorAll("[data-content-step]").forEach(item => {
+    const itemStep = Number(item.dataset.contentStep);
+    item.classList.toggle("current", itemStep === step);
+    item.classList.toggle("complete", itemStep < step);
+  });
+  if (step === 4) elements.stateBadge.textContent = "已审核";
+}
+
+function showVideoStage(stage) {
+  state.videoStage = stage;
+  document.querySelectorAll("[data-video-stage]").forEach(panel => panel.classList.toggle("hidden", Number(panel.dataset.videoStage) !== stage));
+  elements.videoStepper.querySelectorAll("[data-video-step]").forEach(item => {
+    const itemStage = Number(item.dataset.videoStep);
+    item.classList.toggle("current", itemStage === stage);
+    item.classList.toggle("complete", itemStage < stage);
+  });
 }
 
 function persistExportedBrief(brief) {
@@ -482,14 +559,11 @@ function loadJob(jobId) {
   if (!job) return;
   state.currentBrief = job;
   populateBrief(job);
-  elements.briefSection.classList.remove("hidden");
-  elements.workspaceTitle.textContent = job.goal.slice(0, 28);
-  elements.stateBadge.textContent = stateLabel(job.state);
   elements.privacy.value = job.privacy;
   updatePrivacyState();
-  elements.generationSection.classList.remove("hidden");
+  navigateTo("content");
+  showContentStep(["generated", "approved"].includes(job.state) ? (job.state === "approved" ? 4 : 3) : 2);
   loadArtifactHistory(job.id, true);
-  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function resetWorkspace() {
@@ -501,14 +575,14 @@ function resetWorkspace() {
   elements.request.value = "";
   elements.url.value = "";
   elements.fileInput.value = "";
-  elements.briefSection.classList.add("hidden");
-  elements.generationSection.classList.add("hidden");
+  navigateTo("content");
+  showContentStep(1);
   elements.artifactEditor.value = "";
   elements.revision.value = "";
   elements.artifactHistory.innerHTML = '<p class="empty-copy">尚无版本</p>';
   state.lastArtifact = null;
   elements.fileList.innerHTML = "";
-  elements.workspaceTitle.textContent = "整理新素材";
+  elements.workspaceTitle.textContent = "新建内容任务";
   elements.stateBadge.textContent = "待输入";
   elements.retrievalEstimate.textContent = "未生成";
   renderEvidence();
@@ -524,7 +598,14 @@ async function checkService() {
     updateProviderOptions();
     elements.serviceStatus.className = "local-status connected";
     elements.serviceStatusText.textContent = `本地服务 · ${state.service.knowledge.notes} 条笔记`;
+    elements.homeNoteCount.textContent = String(state.service.knowledge.notes || 0);
     const configured = (state.service.generation.providers || []).filter(item => item.configured).map(item => item.label);
+    const seedanceConfigured = (state.service.generation.providers || []).some(item => item.id === "seedance" && item.configured);
+    elements.homeServiceSummary.innerHTML = `
+      <div><dt>本地服务</dt><dd class="status-ok">正常</dd></div>
+      <div><dt>知识库</dt><dd>${escapeHtml(String(state.service.knowledge.notes || 0))} 条笔记</dd></div>
+      <div><dt>内容模型</dt><dd>${configured.filter(label => label !== "Seedance").length} 个可用</dd></div>
+      <div><dt>视频模型</dt><dd>${seedanceConfigured ? "已配置" : "未配置"}</dd></div>`;
     elements.generationMeta.textContent = configured.length
       ? `已连接知识库与 ${configured.join("、")}；受限资料需单次授权。`
       : "已连接知识库；配置 API Key 后可使用外部语言、推理和视频理解模型。";
@@ -532,6 +613,7 @@ async function checkService() {
     state.service = null;
     elements.serviceStatus.className = "local-status disconnected";
     elements.serviceStatusText.textContent = "离线页面";
+    elements.homeServiceSummary.innerHTML = '<div><dt>本地服务</dt><dd>未连接</dd></div><div><dt>知识库</dt><dd>等待服务</dd></div><div><dt>内容模型</dt><dd>等待服务</dd></div><div><dt>视频模型</dt><dd>等待服务</dd></div>';
   }
 }
 
@@ -630,8 +712,89 @@ function renderVideoJob(job) {
   if (job.output_path) {
     elements.openVideoLink.href = `/api/video/file?id=${encodeURIComponent(job.id)}`;
     elements.openVideoLink.classList.remove("hidden");
+    const ids = new Set(splitLines(elements.productionBroll.value));
+    ids.add(job.id);
+    elements.productionBroll.value = [...ids].join("\n");
   } else {
     elements.openVideoLink.classList.add("hidden");
+  }
+}
+
+async function uploadAroll(file) {
+  state.arollMaterial = null;
+  if (!file) {
+    elements.arollFileName.textContent = "选择真人口播视频或录音";
+    elements.productionStatus.textContent = "等待素材";
+    elements.productionArollSummary.textContent = "尚未选择";
+    return;
+  }
+  if (!state.service) {
+    showToast("请通过本地服务打开工作台");
+    return;
+  }
+  elements.arollFileName.textContent = `${file.name} · 正在保存`;
+  elements.productionStatus.textContent = "保存口播素材";
+  const form = new FormData();
+  form.append("file", file, file.name);
+  form.append("jobId", `production-${state.captureId}`);
+  form.append("privacy", elements.privacy.value);
+  try {
+    const response = await fetch("/api/materials/upload", { method: "POST", body: form });
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) throw new Error(payload.error || "口播素材保存失败");
+    state.arollMaterial = payload.material;
+    elements.arollFileName.textContent = `${file.name} · 已保存`;
+    elements.productionStatus.textContent = "可渲染";
+    elements.productionArollSummary.textContent = file.name;
+    elements.productionMeta.textContent = `真人素材：${payload.material.source_file}`;
+  } catch (error) {
+    elements.arollFileName.textContent = `${file.name} · 保存失败`;
+    elements.productionStatus.textContent = "素材失败";
+    elements.productionMeta.textContent = error.message;
+    showToast(error.message);
+  }
+}
+
+async function renderFinishedProduction() {
+  if (!state.arollMaterial) {
+    showToast("请先选择真人口播视频或录音");
+    return;
+  }
+  const script = elements.productionScript.value.trim();
+  if (!script) {
+    showToast("请填写最终字幕逐字稿");
+    elements.productionScript.focus();
+    return;
+  }
+  elements.renderProductionButton.disabled = true;
+  elements.productionStatus.textContent = "正在渲染";
+  elements.productionMeta.textContent = "正在生成字幕图层、合成辅助镜头并输出 MP4…";
+  const productionId = state.currentBrief?.id || `production-${state.captureId}`;
+  try {
+    const response = await fetch("/api/production/render", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        productionId,
+        contentHash: state.arollMaterial.content_hash,
+        script,
+        brollTaskIds: splitLines(elements.productionBroll.value),
+      }),
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) throw new Error(payload.error || "成片渲染失败");
+    state.production = payload.project;
+    elements.productionStatus.textContent = "成片已完成";
+    elements.productionMeta.textContent = `MP4：${payload.project.output_path} · 字幕：${payload.project.captions}`;
+    elements.openProductionLink.href = `/api/production/file?id=${encodeURIComponent(payload.project.id)}`;
+    elements.openProductionLink.classList.remove("hidden");
+    showToast("抖音/小红书竖屏成片已导出");
+  } catch (error) {
+    elements.productionStatus.textContent = "渲染失败";
+    elements.productionMeta.textContent = error.message;
+    showToast(error.message);
+  } finally {
+    elements.renderProductionButton.disabled = false;
   }
 }
 
@@ -654,7 +817,7 @@ async function runGeneration() {
   if (brief.privacy === "restricted" && externalProvider && !allowExternalModel) return;
 
   setGenerationBusy(true);
-  elements.generationSection.classList.remove("hidden");
+  showContentStep(3);
   elements.artifactEditor.value = "正在检索知识库并生成工作稿…";
   elements.generationSection.scrollIntoView({ behavior: "smooth", block: "start" });
   try {
@@ -757,6 +920,7 @@ async function approveArtifact() {
     elements.generationMeta.textContent = `已写入 Obsidian · ${payload.vaultPath}`;
     renderArtifactHistory(payload.artifacts);
     persistGeneratedJob(state.currentBrief);
+    showContentStep(4);
     showToast("审核稿已写入 Obsidian");
   });
 }
@@ -957,6 +1121,7 @@ function renderSignalRadar(payload) {
   elements.signalDate.textContent = latest.date || "尚未运行";
   elements.signalTotal.textContent = String(latest.signal_count ?? signals.length);
   elements.signalCount.textContent = String(latest.signal_count ?? signals.length);
+  elements.homeSignalCount.textContent = String(latest.signal_count ?? signals.length);
   elements.signalErrors.textContent = String(errors.length);
   elements.signalSchedule.textContent = payload.scheduleInstalled ? "已安装" : "未安装";
   elements.signalBoundary.textContent = payload.accessBoundary;
@@ -1106,4 +1271,5 @@ function showToast(message) {
 renderJobs();
 updateContextEstimate();
 updatePrivacyState();
+navigateTo("home");
 checkService();

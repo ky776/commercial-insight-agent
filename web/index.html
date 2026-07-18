@@ -14,28 +14,29 @@
         <span class="brand-mark" aria-hidden="true">CI</span>
         <div>
           <strong>Commercial Insight</strong>
-          <span>Founder Workspace</span>
+          <span>个人内容工作台</span>
         </div>
       </div>
+      <nav class="top-nav" aria-label="模块导航">
+        <button class="nav-item active" type="button" data-view="home" aria-current="page"><span>工作台</span></button>
+        <button class="nav-item" type="button" data-view="content"><span>内容</span><span class="nav-count" id="jobCount">0</span></button>
+        <button class="nav-item" type="button" data-view="video"><span>成片</span></button>
+        <button class="nav-item" type="button" data-view="signals"><span>信号</span><span class="nav-count" id="signalCount">0</span></button>
+        <button class="nav-item" type="button" data-view="knowledge"><span>知识库</span></button>
+      </nav>
       <div class="topbar-actions">
         <span class="local-status" id="serviceStatus"><span class="status-dot"></span><span id="serviceStatusText">检查本地服务</span></span>
-        <button class="button secondary" id="newJobButton" type="button">新建任务</button>
+        <button class="button primary" id="newJobButton" type="button">新建内容任务</button>
       </div>
     </header>
 
-    <div class="app-shell">
+    <div class="app-shell" id="appShell">
       <aside class="sidebar" aria-label="主导航">
-        <nav>
-          <button class="nav-item active" type="button" data-view="inbox" aria-current="page"><span>收件箱</span><span class="nav-count" id="jobCount">0</span></button>
-          <button class="nav-item" type="button" data-view="active"><span>进行中</span><span class="nav-count" id="activeCount">0</span></button>
-          <button class="nav-item" type="button" data-view="drafts"><span>内容草稿</span></button>
-          <button class="nav-item" type="button" data-view="signals"><span>信号雷达</span><span class="nav-count" id="signalCount">0</span></button>
-          <button class="nav-item" type="button" data-view="knowledge"><span>知识库</span></button>
-          <button class="nav-item" type="button" data-view="exports"><span>导出记录</span></button>
-        </nav>
-
         <section class="recent-section" aria-labelledby="recentHeading">
-          <div class="section-label" id="recentHeading">最近任务</div>
+          <div class="recent-heading-row">
+            <div class="section-label" id="recentHeading">最近任务</div>
+            <span class="nav-count" id="activeCount">0</span>
+          </div>
           <div id="recentJobs" class="recent-jobs">
             <p class="empty-copy">还没有保存的任务</p>
           </div>
@@ -45,378 +46,274 @@
       <main class="workspace">
         <div class="workspace-header">
           <div>
-            <span class="eyebrow">当前任务</span>
-            <h1 id="workspaceTitle">整理新素材</h1>
+            <span class="eyebrow" id="workspaceEyebrow">个人工作台</span>
+            <h1 id="workspaceTitle">今日工作</h1>
           </div>
-          <span class="state-badge" id="stateBadge">待输入</span>
+          <span class="state-badge" id="stateBadge">本地优先</span>
         </div>
 
-        <ol class="stepper" aria-label="工作流程">
-          <li class="current">素材</li>
-          <li>解析</li>
-          <li>简报</li>
-          <li>洞见</li>
-          <li>生成</li>
-          <li>审核</li>
-          <li>导出</li>
-        </ol>
-
-        <section class="signal-section hidden" id="signalSection" aria-labelledby="signalHeading">
-          <div class="section-heading">
-            <div>
-              <span class="eyebrow">公开信息源</span>
-              <h2 id="signalHeading">AI 与商业信号雷达</h2>
-              <p id="signalBoundary">GitHub、RSS 与公开帖子每日汇总；X 账号观察名单不等于自动抓取。</p>
-            </div>
-            <button class="button primary" id="collectSignalsButton" type="button">立即采集</button>
-          </div>
-
-          <dl class="signal-metrics">
-            <div><dt>最近日期</dt><dd id="signalDate">尚未运行</dd></div>
-            <div><dt>有效信号</dt><dd id="signalTotal">0</dd></div>
-            <div><dt>采集异常</dt><dd id="signalErrors">0</dd></div>
-            <div><dt>每日定时</dt><dd id="signalSchedule">未安装</dd></div>
+        <section class="home-section" id="homeSection" aria-labelledby="homeHeading">
+          <h2 id="homeHeading" class="sr-only">今日工作</h2>
+          <dl class="status-strip">
+            <div><dt>内容任务</dt><dd id="homeJobCount">0</dd></div>
+            <div><dt>进行中</dt><dd id="homeActiveCount">0</dd></div>
+            <div><dt>知识笔记</dt><dd id="homeNoteCount">--</dd></div>
+            <div><dt>今日信号</dt><dd id="homeSignalCount">--</dd></div>
           </dl>
 
-          <div class="signal-config">
-            <div>
-              <h3>增加观察来源</h3>
-              <div class="source-add-row">
-                <select id="signalSourceType" aria-label="来源类型">
-                  <option value="public_post_url">公开帖子 URL</option>
-                  <option value="github_user">GitHub 用户</option>
-                  <option value="github_repository">GitHub 仓库</option>
-                  <option value="feed">RSS / Atom</option>
-                  <option value="x_account">X 观察账号</option>
-                  <option value="facebook_page">Facebook 观察主页</option>
-                </select>
-                <input id="signalSourceValue" aria-label="来源内容" placeholder="粘贴公开 URL 或输入账号" />
-                <button class="button secondary" id="addSignalSourceButton" type="button">添加</button>
+          <div class="home-grid">
+            <section class="home-primary">
+              <div class="section-heading compact-heading">
+                <div>
+                  <h2>继续工作</h2>
+                  <p>从素材到可发布成片，任务状态会保留在本机。</p>
+                </div>
               </div>
-              <p class="signal-note">X/Facebook 账号用于人工发现。没有授权 API 时，请添加具体公开帖子 URL。</p>
-            </div>
-            <div>
-              <h3>当前观察范围</h3>
-              <div id="signalWatchlist" class="watchlist-summary"><p class="empty-copy">正在读取配置</p></div>
-            </div>
+              <div class="action-list">
+                <button class="action-row" type="button" data-go-view="content">
+                  <span class="action-symbol" aria-hidden="true">＋</span>
+                  <span><strong>新建内容任务</strong><small>导入素材、生成简报与内容稿</small></span>
+                  <span aria-hidden="true">›</span>
+                </button>
+                <button class="action-row" type="button" data-go-view="video">
+                  <span class="action-symbol" aria-hidden="true">▶</span>
+                  <span><strong>制作短视频成片</strong><small>口播素材、Seedance 辅助镜头与字幕合成</small></span>
+                  <span aria-hidden="true">›</span>
+                </button>
+                <button class="action-row" type="button" data-go-view="knowledge">
+                  <span class="action-symbol" aria-hidden="true">▤</span>
+                  <span><strong>导入知识资料</strong><small>会话、研报与业务材料进入 Obsidian 审核区</small></span>
+                  <span aria-hidden="true">›</span>
+                </button>
+              </div>
+            </section>
+            <aside class="system-summary">
+              <div class="section-heading compact-heading"><div><h2>服务状态</h2></div></div>
+              <dl class="summary-list" id="homeServiceSummary">
+                <div><dt>本地服务</dt><dd>检查中</dd></div>
+                <div><dt>知识库</dt><dd>检查中</dd></div>
+                <div><dt>内容模型</dt><dd>检查中</dd></div>
+                <div><dt>视频模型</dt><dd>检查中</dd></div>
+              </dl>
+            </aside>
+          </div>
+        </section>
+
+        <div class="content-module hidden" id="contentModule">
+          <div class="module-toolbar">
+            <ol class="stepper" id="contentStepper" aria-label="内容任务流程">
+              <li class="current" data-content-step="1"><span>1</span>素材</li>
+              <li data-content-step="2"><span>2</span>任务简报</li>
+              <li data-content-step="3"><span>3</span>生成内容</li>
+              <li data-content-step="4"><span>4</span>审核交付</li>
+            </ol>
+            <label class="filter-field">
+              <span class="sr-only">任务筛选</span>
+              <select id="jobFilterInput">
+                <option value="content">全部任务</option>
+                <option value="active">进行中</option>
+                <option value="drafts">内容草稿</option>
+                <option value="exports">已导出</option>
+              </select>
+            </label>
           </div>
 
-          <div class="signal-results-heading">
-            <div>
-              <h3>最近一次结果</h3>
-              <p id="signalResultMeta">采集后写入 Obsidian `10_Sources/Social` 并进入知识索引。</p>
+          <section class="input-section" id="inputSection" aria-labelledby="inputHeading">
+            <div class="section-heading">
+              <div>
+                <h2 id="inputHeading">选择素材与任务</h2>
+                <p>可以输入需求、链接或文件。原文件保存到本机，外部模型仅在确认后调用。</p>
+              </div>
+              <fieldset class="segmented" aria-label="任务模式">
+                <label><input type="radio" name="mode" value="capture" /><span>收集</span></label>
+                <label><input type="radio" name="mode" value="discuss" checked /><span>讨论</span></label>
+                <label><input type="radio" name="mode" value="decide" /><span>决策</span></label>
+                <label><input type="radio" name="mode" value="execute" /><span>执行</span></label>
+              </fieldset>
             </div>
+
+            <label class="field-label" for="requestInput">任务要求</label>
+            <textarea id="requestInput" rows="6" placeholder="例如：分析这份行业报告，提炼平台流量向企业号、本地和电商迁移的信号，生成一份 90 秒短视频口播稿。"></textarea>
+
+            <div class="source-row">
+              <label class="drop-zone" id="dropZone" for="fileInput">
+                <input id="fileInput" type="file" multiple accept=".md,.txt,.json,.csv,.yaml,.yml,.pdf,.png,.jpg,.jpeg,.gif,.webp,.heic,.mp3,.wav,.m4a,.aac,.flac,.mp4,.mov,.mkv,.webm" />
+                <strong>选择文件或拖到这里</strong>
+                <span>文档、图片、音频、视频，单文件最大 100 MB</span>
+              </label>
+              <div class="source-fields">
+                <label><span>网页链接</span><input id="urlInput" type="url" placeholder="https://" /></label>
+                <label><span>隐私级别</span><select id="privacyInput"><option value="internal" selected>内部资料</option><option value="public">公开资料</option><option value="restricted">受限资料</option></select></label>
+                <label><span>素材理解模型</span><select id="materialProviderInput"><option value="auto">自动选择</option><option value="dashscope">通义千问</option><option value="gemini">Google Gemini</option></select></label>
+              </div>
+            </div>
+            <div id="fileList" class="file-list" aria-live="polite"></div>
+
+            <div class="form-grid">
+              <label><span>目标受众</span><input id="audienceInput" value="中小品牌老板" /></label>
+              <label><span>期望产物</span><select id="deliverableInput"><option value="short_video_script">短视频口播稿</option><option value="article_outline">公众号文章大纲</option><option value="material_analysis">素材拆解卡</option><option value="daily_digest">行业日报</option><option value="topic_pool">选题池</option></select></label>
+            </div>
+            <label class="field-label" for="constraintsInput">约束条件</label>
+            <input id="constraintsInput" value="事实与观点分开；保留来源；常温、顾问型表达" />
+            <div class="primary-actions actions-right">
+              <span class="action-note">生成简报后再调用高消耗分析</span>
+              <button class="button primary" id="generateButton" type="button">下一步：生成简报</button>
+            </div>
+          </section>
+
+          <section class="brief-section hidden" id="briefSection" aria-labelledby="briefHeading">
+            <div class="section-heading">
+              <div><h2 id="briefHeading">确认任务简报</h2><p>这是 Agent 将使用的最小上下文，可以直接修改。</p></div>
+              <span class="budget-badge" id="budgetBadge">标准预算</span>
+            </div>
+            <div class="brief-grid">
+              <label class="span-two"><span>目标</span><textarea id="briefGoal" rows="3"></textarea></label>
+              <label><span>目标受众</span><input id="briefAudience" /></label>
+              <label><span>产物</span><input id="briefDeliverable" /></label>
+              <label class="span-two"><span>输入来源</span><textarea id="briefInputs" rows="3"></textarea></label>
+              <label class="span-two"><span>约束条件</span><textarea id="briefConstraints" rows="3"></textarea></label>
+              <label><span>工作假设</span><textarea id="briefAssumptions" rows="4"></textarea></label>
+              <label><span>知识库检索词</span><textarea id="briefQueries" rows="4"></textarea></label>
+              <label class="span-two"><span>待确认问题</span><textarea id="briefQuestions" rows="3"></textarea></label>
+            </div>
+            <div class="generation-config">
+              <label class="provider-field"><span>生成方式</span><select id="providerInput"><option value="auto">自动选择</option><option value="evidence">仅本地证据</option><option value="openai">OpenAI</option><option value="deepseek">DeepSeek</option><option value="dashscope">通义千问</option><option value="gemini">Google Gemini</option></select></label>
+              <div class="brief-actions">
+                <button class="button text-button" id="resetButton" type="button">返回素材</button>
+                <button class="button secondary" id="saveButton" type="button">保存任务</button>
+                <button class="button secondary" id="exportButton" type="button">导出简报</button>
+                <button class="button primary" id="runButton" type="button">下一步：检索并生成</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="generation-section hidden" id="generationSection" aria-labelledby="generationHeading">
+            <div class="section-heading">
+              <div><h2 id="generationHeading">编辑与审核内容</h2><p id="generationMeta">检索知识库后生成，可直接修改。事实与来源仍需人工核验。</p></div>
+              <button class="button secondary" id="sendToVideoButton" type="button">进入成片生产</button>
+            </div>
+            <div class="generation-layout">
+              <div>
+                <label class="field-label" for="artifactEditor">Markdown 工作稿</label>
+                <textarea id="artifactEditor" class="artifact-editor" rows="24" placeholder="确认简报后，点击“检索并生成”。"></textarea>
+                <div class="revision-box">
+                  <label for="revisionInput">修改要求</label>
+                  <div class="revision-row"><input id="revisionInput" placeholder="例如：保留论点，把开头改成品牌老板能感知的成本问题" /><button class="button secondary" id="reviseButton" type="button">按要求修改</button></div>
+                </div>
+                <div class="brief-actions">
+                  <button class="button primary" id="approveArtifactButton" type="button">审核通过</button>
+                  <button class="button secondary" id="saveArtifactButton" type="button">保存版本</button>
+                  <button class="button secondary" id="downloadArtifactButton" type="button">下载</button>
+                  <button class="button secondary" id="regenerateButton" type="button">生成新版本</button>
+                </div>
+              </div>
+              <aside class="retrieved-evidence" aria-label="知识库证据">
+                <div class="section-label">知识库证据</div>
+                <div id="retrievedEvidenceList" class="evidence-list"><p class="empty-copy">尚未检索</p></div>
+                <div class="artifact-history-heading section-label">版本历史</div>
+                <div id="artifactHistory" class="artifact-history"><p class="empty-copy">尚无版本</p></div>
+              </aside>
+            </div>
+          </section>
+        </div>
+
+        <section class="video-studio-section hidden" id="videoStudioSection" aria-labelledby="videoStudioHeading">
+          <div class="section-heading video-title-row">
+            <div><h2 id="videoStudioHeading">真人口播成片</h2><p>抖音、小红书 9:16 视频；真人原声为主，Seedance 生成辅助镜头。</p></div>
+            <span class="budget-badge" id="productionStatus">等待素材</span>
           </div>
-          <div id="signalResults" class="signal-results">
-            <p class="empty-copy">尚无采集结果</p>
+          <ol class="stepper video-stepper" id="videoStepper" aria-label="成片生产流程">
+            <li class="current" data-video-step="1"><span>1</span>脚本方案</li>
+            <li data-video-step="2"><span>2</span>真人素材</li>
+            <li data-video-step="3"><span>3</span>辅助镜头</li>
+            <li data-video-step="4"><span>4</span>合成导出</li>
+          </ol>
+
+          <div class="video-stage" data-video-stage="1">
+            <div class="stage-heading"><span class="stage-number">01</span><div><h3>确认口播脚本</h3><p>内容稿可直接带入，也可以在这里粘贴最终逐字稿。</p></div></div>
+            <label class="field-label" for="productionScriptInput">字幕逐字稿</label>
+            <textarea id="productionScriptInput" rows="14" placeholder="粘贴最终口播逐字稿。系统会根据真人素材时长自动切分字幕。"></textarea>
+            <div class="stage-actions"><button class="button secondary" id="useDraftForProductionButton" type="button">使用当前工作稿</button><button class="button primary" id="videoNextToAroll" type="button">下一步：真人素材</button></div>
           </div>
-          <div id="signalErrorList" class="signal-error-list"></div>
+
+          <div class="video-stage hidden" data-video-stage="2">
+            <div class="stage-heading"><span class="stage-number">02</span><div><h3>上传真人口播</h3><p>支持视频或录音。视频保留原画面，录音需至少一个辅助镜头。</p></div></div>
+            <label class="media-picker" for="arollFileInput">
+              <input id="arollFileInput" type="file" accept="video/*,audio/*,.mp4,.mov,.m4a,.mp3,.wav" />
+              <span class="media-picker-icon" aria-hidden="true">＋</span>
+              <strong id="arollFileName">选择真人口播视频或录音</strong>
+              <small>MP4、MOV、M4A、MP3、WAV</small>
+            </label>
+            <p class="video-job-meta" id="arollMeta">素材保存在本机，不上传到 Seedance。</p>
+            <div class="stage-actions"><button class="button text-button" data-video-back="1" type="button">上一步</button><button class="button primary" id="videoNextToBroll" type="button">下一步：辅助镜头</button></div>
+          </div>
+
+          <div class="video-stage hidden" data-video-stage="3">
+            <div class="stage-heading"><span class="stage-number">03</span><div><h3>生成辅助镜头</h3><p>可跳过，只使用真人画面与字幕。提交 Seedance 会产生火山方舟费用。</p></div></div>
+            <div class="video-stage-layout">
+              <div>
+                <label class="field-label" for="videoPromptInput">视频提示词</label>
+                <textarea id="videoPromptInput" rows="6" placeholder="描述主体、场景、动作、镜头、光线、声音和节奏。"></textarea>
+                <div class="video-config-grid">
+                  <label><span>画面比例</span><select id="videoRatioInput"><option value="9:16">9:16 竖屏</option><option value="16:9">16:9 横屏</option><option value="1:1">1:1 方形</option></select></label>
+                  <label><span>时长</span><select id="videoDurationInput"><option value="5">5 秒</option><option value="10">10 秒</option><option value="15">15 秒</option></select></label>
+                  <label><span>分辨率</span><select id="videoResolutionInput"><option value="720p">720p</option><option value="1080p">1080p</option><option value="480p">480p</option></select></label>
+                </div>
+                <label class="field-label" for="videoReferencesInput">参考图地址</label>
+                <textarea id="videoReferencesInput" rows="2" placeholder="HTTPS 或 asset://，多条换行"></textarea>
+              </div>
+              <aside class="run-panel">
+                <div><span class="section-label">任务状态</span><strong id="videoJobStatus">尚未提交</strong></div>
+                <p id="videoJobMeta">生成视频保存到 local/video_outputs/&lt;任务ID&gt;/video.mp4</p>
+                <button class="button primary" id="createVideoButton" type="button">提交 Seedance</button>
+                <button class="button secondary" id="refreshVideoButton" type="button" disabled>刷新状态</button>
+                <a class="button secondary hidden" id="openVideoLink" href="#" target="_blank">打开本地视频</a>
+              </aside>
+            </div>
+            <div class="stage-actions"><button class="button text-button" data-video-back="2" type="button">上一步</button><button class="button primary" id="videoNextToRender" type="button">下一步：合成导出</button></div>
+          </div>
+
+          <div class="video-stage hidden" data-video-stage="4">
+            <div class="stage-heading"><span class="stage-number">04</span><div><h3>合成与导出</h3><p>确认素材后生成字幕图层，并导出 9:16 H.264 MP4。</p></div></div>
+            <div class="production-summary">
+              <div><span>真人素材</span><strong id="productionArollSummary">尚未选择</strong></div>
+              <label><span>Seedance 辅助镜头任务 ID</span><textarea id="productionBrollInput" rows="4" placeholder="每行一个任务 ID；可留空"></textarea></label>
+            </div>
+            <div class="export-panel">
+              <div><span class="section-label">导出位置</span><p id="productionMeta">local/projects/&lt;项目ID&gt;/exports/</p></div>
+              <div class="brief-actions"><button class="button primary" id="renderProductionButton" type="button">渲染成片</button><a class="button secondary hidden" id="openProductionLink" href="#" target="_blank">打开成片</a></div>
+            </div>
+            <div class="stage-actions"><button class="button text-button" data-video-back="3" type="button">上一步</button></div>
+          </div>
+        </section>
+
+        <section class="signal-section hidden" id="signalSection" aria-labelledby="signalHeading">
+          <div class="section-heading"><div><span class="eyebrow">公开信息源</span><h2 id="signalHeading">AI 与商业信号雷达</h2><p id="signalBoundary">GitHub、RSS 与公开帖子每日汇总；X 账号观察名单不等于自动抓取。</p></div><button class="button primary" id="collectSignalsButton" type="button">立即采集</button></div>
+          <dl class="signal-metrics"><div><dt>最近日期</dt><dd id="signalDate">尚未运行</dd></div><div><dt>有效信号</dt><dd id="signalTotal">0</dd></div><div><dt>采集异常</dt><dd id="signalErrors">0</dd></div><div><dt>每日定时</dt><dd id="signalSchedule">未安装</dd></div></dl>
+          <div class="signal-config">
+            <div><h3>增加观察来源</h3><div class="source-add-row"><select id="signalSourceType" aria-label="来源类型"><option value="public_post_url">公开帖子 URL</option><option value="github_user">GitHub 用户</option><option value="github_repository">GitHub 仓库</option><option value="feed">RSS / Atom</option><option value="x_account">X 观察账号</option><option value="facebook_page">Facebook 观察主页</option></select><input id="signalSourceValue" aria-label="来源内容" placeholder="粘贴公开 URL 或输入账号" /><button class="button secondary" id="addSignalSourceButton" type="button">添加</button></div><p class="signal-note">X/Facebook 账号用于人工发现。没有授权 API 时，请添加具体公开帖子 URL。</p></div>
+            <div><h3>当前观察范围</h3><div id="signalWatchlist" class="watchlist-summary"><p class="empty-copy">正在读取配置</p></div></div>
+          </div>
+          <div class="signal-results-heading"><div><h3>最近一次结果</h3><p id="signalResultMeta">采集后写入 Obsidian `10_Sources/Social` 并进入知识索引。</p></div></div>
+          <div id="signalResults" class="signal-results"><p class="empty-copy">尚无采集结果</p></div><div id="signalErrorList" class="signal-error-list"></div>
         </section>
 
         <section class="knowledge-system-section hidden" id="knowledgeSystemSection" aria-labelledby="knowledgeSystemHeading">
-          <div class="section-heading">
-            <div>
-              <span class="eyebrow">全局知识系统</span>
-              <h2 id="knowledgeSystemHeading">会话知识导入</h2>
-              <p>从 ChatGPT 或 Codex 导出文件生成待审核问题卡；原始文件归档在本机私有区。</p>
-            </div>
-            <span class="budget-badge" id="conversationImportCount">0 次导入</span>
-          </div>
-
+          <div class="section-heading"><div><span class="eyebrow">Obsidian Vault</span><h2 id="knowledgeSystemHeading">知识资料导入</h2><p>会话、业务材料和研报先进入审核区，再参与检索。</p></div><span class="budget-badge" id="conversationImportCount">0 次导入</span></div>
+          <div class="knowledge-tabs" role="tablist"><button class="active" type="button">会话导入</button><button type="button" disabled>批量资料</button><button type="button" disabled>知识图谱</button></div>
           <div class="conversation-import-form">
-            <label class="conversation-file-picker" for="conversationFileInput">
-              <input id="conversationFileInput" type="file" accept=".zip,.json,.jsonl,.md,.txt" />
-              <strong id="conversationFileName">选择 ChatGPT/Codex 导出文件</strong>
-              <span>支持 ZIP、JSON、JSONL、Markdown、TXT，最大 250 MB</span>
-            </label>
-            <div class="conversation-import-options">
-              <label>
-                <span>关联项目</span>
-                <select id="conversationProjectInput">
-                  <option value="">暂不关联</option>
-                  <option value="project-a">A 项目</option>
-                  <option value="project-b">B 项目</option>
-                  <option value="project-c">C 项目</option>
-                  <option value="project-d">D 项目</option>
-                </select>
-              </label>
-              <label>
-                <span>敏感级别</span>
-                <select id="conversationSensitivityInput">
-                  <option value="internal">内部</option>
-                  <option value="restricted">受限/公司材料</option>
-                  <option value="public">公开</option>
-                </select>
-              </label>
-            </div>
+            <label class="conversation-file-picker" for="conversationFileInput"><input id="conversationFileInput" type="file" accept=".zip,.json,.jsonl,.md,.txt" /><strong id="conversationFileName">选择 ChatGPT/Codex 导出文件</strong><span>ZIP、JSON、JSONL、Markdown、TXT，最大 250 MB</span></label>
+            <div class="conversation-import-options"><label><span>关联项目</span><select id="conversationProjectInput"><option value="">暂不关联</option><option value="project-a">A 项目</option><option value="project-b">B 项目</option><option value="project-c">C 项目</option><option value="project-d">D 项目</option></select></label><label><span>敏感级别</span><select id="conversationSensitivityInput"><option value="internal">内部</option><option value="restricted">受限/公司材料</option><option value="public">公开</option></select></label></div>
           </div>
-          <div class="primary-actions">
-            <button class="button primary" id="importConversationButton" type="button">导入并生成审核笔记</button>
-            <span class="action-note" id="conversationImportStatus">不会自动确认结论或学习偏好</span>
-          </div>
-
-          <div class="conversation-results-heading">
-            <h3>最近导入</h3>
-          </div>
-          <div id="conversationImportResults" class="conversation-import-results">
-            <p class="empty-copy">尚无会话导入记录</p>
-          </div>
-        </section>
-
-        <section class="input-section" aria-labelledby="inputHeading">
-          <div class="section-heading">
-            <div>
-              <h2 id="inputHeading">输入素材</h2>
-              <p>直接描述任务，也可以拖入文件。原文件本地保存，理解结果由你选择的 API 模型生成。</p>
-            </div>
-            <fieldset class="segmented" aria-label="任务模式">
-              <label><input type="radio" name="mode" value="capture" /><span>收集</span></label>
-              <label><input type="radio" name="mode" value="discuss" checked /><span>讨论</span></label>
-              <label><input type="radio" name="mode" value="decide" /><span>决策</span></label>
-              <label><input type="radio" name="mode" value="execute" /><span>执行</span></label>
-            </fieldset>
-          </div>
-
-          <label class="field-label" for="requestInput">你想处理什么</label>
-          <textarea id="requestInput" rows="7" placeholder="例如：分析这份行业报告，提炼平台流量向企业号、本地和电商迁移的信号，生成一份 90 秒短视频口播稿。"></textarea>
-
-          <div class="source-row">
-            <label class="drop-zone" id="dropZone" for="fileInput">
-              <input id="fileInput" type="file" multiple accept=".md,.txt,.json,.csv,.yaml,.yml,.pdf,.png,.jpg,.jpeg,.gif,.webp,.heic,.mp3,.wav,.m4a,.aac,.flac,.mp4,.mov,.mkv,.webm" />
-              <strong>选择文件或拖到这里</strong>
-              <span>本地保存并去重；图片与音视频不调用本机模型，最大 100 MB</span>
-            </label>
-            <div class="source-fields">
-              <label>
-                <span>网页链接</span>
-                <input id="urlInput" type="url" placeholder="https://" />
-              </label>
-              <label>
-                <span>隐私级别</span>
-                <select id="privacyInput">
-                  <option value="internal" selected>内部资料</option>
-                  <option value="public">公开资料</option>
-                  <option value="restricted">受限资料</option>
-                </select>
-              </label>
-              <label>
-                <span>素材理解模型</span>
-                <select id="materialProviderInput">
-                  <option value="auto">自动选择</option>
-                  <option value="dashscope">通义千问</option>
-                  <option value="gemini">Google Gemini</option>
-                </select>
-              </label>
-            </div>
-          </div>
-
-          <div id="fileList" class="file-list" aria-live="polite"></div>
-
-          <div class="form-grid">
-            <label>
-              <span>目标受众</span>
-              <input id="audienceInput" value="中小品牌老板" />
-            </label>
-            <label>
-              <span>期望产物</span>
-              <select id="deliverableInput">
-                <option value="short_video_script">短视频口播稿</option>
-                <option value="article_outline">公众号文章大纲</option>
-                <option value="material_analysis">素材拆解卡</option>
-                <option value="daily_digest">行业日报</option>
-                <option value="topic_pool">选题池</option>
-              </select>
-            </label>
-          </div>
-
-          <label class="field-label" for="constraintsInput">约束条件</label>
-          <input id="constraintsInput" value="事实与观点分开；保留来源；常温、顾问型表达" />
-
-          <div class="primary-actions">
-            <button class="button primary" id="generateButton" type="button">生成任务简报</button>
-            <span class="action-note">先确认简报，再进入高消耗分析</span>
-          </div>
-        </section>
-
-        <section class="brief-section hidden" id="briefSection" aria-labelledby="briefHeading">
-          <div class="section-heading">
-            <div>
-              <h2 id="briefHeading">任务简报</h2>
-              <p>这是 Agent 将使用的最小上下文。可以直接修改任何字段。</p>
-            </div>
-            <span class="budget-badge" id="budgetBadge">标准预算</span>
-          </div>
-
-          <div class="brief-grid">
-            <label class="span-two">
-              <span>目标</span>
-              <textarea id="briefGoal" rows="3"></textarea>
-            </label>
-            <label>
-              <span>目标受众</span>
-              <input id="briefAudience" />
-            </label>
-            <label>
-              <span>产物</span>
-              <input id="briefDeliverable" />
-            </label>
-            <label class="span-two">
-              <span>输入来源</span>
-              <textarea id="briefInputs" rows="3"></textarea>
-            </label>
-            <label class="span-two">
-              <span>约束条件</span>
-              <textarea id="briefConstraints" rows="3"></textarea>
-            </label>
-            <label>
-              <span>工作假设</span>
-              <textarea id="briefAssumptions" rows="4"></textarea>
-            </label>
-            <label>
-              <span>知识库检索词</span>
-              <textarea id="briefQueries" rows="4"></textarea>
-            </label>
-            <label class="span-two">
-              <span>待确认问题</span>
-              <textarea id="briefQuestions" rows="3"></textarea>
-            </label>
-          </div>
-
-          <div class="generation-config">
-            <label class="provider-field">
-              <span>生成方式</span>
-              <select id="providerInput">
-                <option value="auto">自动选择</option>
-                <option value="evidence">仅本地证据</option>
-                <option value="openai">OpenAI</option>
-                <option value="deepseek">DeepSeek</option>
-                <option value="dashscope">通义千问</option>
-                <option value="gemini">Google Gemini</option>
-              </select>
-            </label>
-            <div class="brief-actions">
-              <button class="button primary" id="runButton" type="button">检索并生成</button>
-              <button class="button secondary" id="saveButton" type="button">保存任务</button>
-              <button class="button secondary" id="exportButton" type="button">导出 Markdown</button>
-              <button class="button text-button" id="resetButton" type="button">重新整理</button>
-            </div>
-          </div>
-        </section>
-
-        <section class="generation-section hidden" id="generationSection" aria-labelledby="generationHeading">
-          <div class="section-heading">
-            <div>
-              <h2 id="generationHeading">内容工作稿</h2>
-              <p id="generationMeta">检索知识库后生成，可直接修改。事实与来源仍需人工核验。</p>
-            </div>
-          </div>
-
-          <div class="generation-layout">
-            <div>
-              <label class="field-label" for="artifactEditor">Markdown 草稿</label>
-              <textarea id="artifactEditor" class="artifact-editor" rows="24" placeholder="确认简报后，点击“检索并生成”。"></textarea>
-              <div class="revision-box">
-                <label for="revisionInput">修改要求</label>
-                <div class="revision-row">
-                  <input id="revisionInput" placeholder="例如：保留论点，把开头改成品牌老板能感知的成本问题" />
-                  <button class="button secondary" id="reviseButton" type="button">按要求修改</button>
-                </div>
-              </div>
-              <div class="brief-actions">
-                <button class="button primary" id="approveArtifactButton" type="button">审核通过</button>
-                <button class="button secondary" id="saveArtifactButton" type="button">保存当前版本</button>
-                <button class="button secondary" id="downloadArtifactButton" type="button">下载</button>
-                <button class="button secondary" id="regenerateButton" type="button">生成新版本</button>
-              </div>
-            </div>
-            <aside class="retrieved-evidence" aria-label="知识库证据">
-              <div class="section-label">知识库证据</div>
-              <div id="retrievedEvidenceList" class="evidence-list">
-                <p class="empty-copy">尚未检索</p>
-              </div>
-              <div class="artifact-history-heading section-label">版本历史</div>
-              <div id="artifactHistory" class="artifact-history">
-                <p class="empty-copy">尚无版本</p>
-              </div>
-            </aside>
-          </div>
-
-          <div class="video-generation-panel" id="videoGenerationPanel">
-            <div class="section-heading">
-              <div>
-                <span class="eyebrow">字节 Seedance 2.0</span>
-                <h2>生成视频片段</h2>
-                <p>在内容稿审核后生成辅助画面。提交任务会产生火山方舟费用。</p>
-              </div>
-              <span class="budget-badge" id="videoJobStatus">尚未提交</span>
-            </div>
-            <label class="field-label" for="videoPromptInput">视频提示词</label>
-            <textarea id="videoPromptInput" rows="5" placeholder="描述主体、场景、动作、镜头、光线、声音和节奏。不要直接粘贴未经整理的整篇文章。"></textarea>
-            <div class="video-config-grid">
-              <label>
-                <span>画面比例</span>
-                <select id="videoRatioInput">
-                  <option value="9:16">9:16 竖屏</option>
-                  <option value="16:9">16:9 横屏</option>
-                  <option value="1:1">1:1 方形</option>
-                </select>
-              </label>
-              <label>
-                <span>时长</span>
-                <select id="videoDurationInput">
-                  <option value="5">5 秒</option>
-                  <option value="10">10 秒</option>
-                  <option value="15">15 秒</option>
-                </select>
-              </label>
-              <label>
-                <span>分辨率</span>
-                <select id="videoResolutionInput">
-                  <option value="720p">720p</option>
-                  <option value="1080p">1080p</option>
-                  <option value="480p">480p</option>
-                </select>
-              </label>
-              <label>
-                <span>参考图地址</span>
-                <textarea id="videoReferencesInput" rows="2" placeholder="HTTPS 或 asset://，多条换行"></textarea>
-              </label>
-            </div>
-            <div class="brief-actions">
-              <button class="button primary" id="createVideoButton" type="button">提交 Seedance</button>
-              <button class="button secondary" id="refreshVideoButton" type="button" disabled>刷新状态</button>
-              <a class="button secondary hidden" id="openVideoLink" href="#" target="_blank">打开本地视频</a>
-            </div>
-            <p class="video-job-meta" id="videoJobMeta">生成视频默认保存到 local/video_outputs/&lt;任务ID&gt;/video.mp4</p>
-          </div>
+          <div class="primary-actions"><button class="button primary" id="importConversationButton" type="button">导入并生成审核笔记</button><span class="action-note" id="conversationImportStatus">不会自动确认结论或学习偏好</span></div>
+          <div class="conversation-results-heading"><h3>最近导入</h3></div><div id="conversationImportResults" class="conversation-import-results"><p class="empty-copy">尚无会话导入记录</p></div>
         </section>
       </main>
 
-      <aside class="evidence-panel" aria-label="来源与风险">
-        <section>
-          <div class="section-label">来源</div>
-          <div id="evidenceSources" class="evidence-list">
-            <p class="empty-copy">添加文本、链接或文件后显示</p>
-          </div>
-        </section>
-
-        <section>
-          <div class="section-label">上下文预算</div>
-          <dl class="metrics">
-            <div><dt>输入估算</dt><dd id="tokenEstimate">0 tokens</dd></div>
-            <div><dt>检索范围</dt><dd id="retrievalEstimate">未生成</dd></div>
-            <div><dt>处理方式</dt><dd>本地编排 + API 模型</dd></div>
-          </dl>
-        </section>
-
-        <section class="risk-section">
-          <div class="section-label">隐私与审核</div>
-          <ul class="check-list" id="riskList">
-            <li class="ok">仅在明确选择后调用外部 API</li>
-            <li class="ok">不自动发布内容</li>
-            <li>生成后需人工核验事实</li>
-          </ul>
-        </section>
+      <aside class="evidence-panel" id="evidencePanel" aria-label="来源与风险">
+        <section><div class="section-label">来源</div><div id="evidenceSources" class="evidence-list"><p class="empty-copy">添加文本、链接或文件后显示</p></div></section>
+        <section><div class="section-label">上下文预算</div><dl class="metrics"><div><dt>输入估算</dt><dd id="tokenEstimate">0 tokens</dd></div><div><dt>检索范围</dt><dd id="retrievalEstimate">未生成</dd></div><div><dt>处理方式</dt><dd>本地编排 + API 模型</dd></div></dl></section>
+        <section class="risk-section"><div class="section-label">隐私与审核</div><ul class="check-list" id="riskList"><li class="ok">仅在明确选择后调用外部 API</li><li class="ok">不自动发布内容</li><li>生成后需人工核验事实</li></ul></section>
       </aside>
     </div>
 

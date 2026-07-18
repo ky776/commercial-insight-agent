@@ -37,6 +37,8 @@ The first version focuses on:
 - Local-first job, artifact, and media storage boundaries
 - API adapters for external language, reasoning, image, and video-understanding models
 - Seedance 2.0 API jobs for reviewed text-to-video generation and local result storage
+- A two-level personal workbench for task oversight and focused content production
+- Publishable 9:16 MP4 composition from human A-roll, burned captions, and optional Seedance B-roll
 
 Out of scope for the first version:
 
@@ -145,7 +147,7 @@ Start the local workspace service to use Obsidian retrieval and content generati
 ./scripts/run_workspace.sh
 ```
 
-Then open `http://127.0.0.1:4173`. The workflow supports editable briefs, cited local retrieval, evidence-only drafts, optional model generation, scoped revisions, version history, human approval, Obsidian write-back, and Markdown export. See `docs/local_workspace_service.md` for privacy and storage boundaries.
+Then open `http://127.0.0.1:4173`. The workflow supports editable briefs, cited local retrieval, evidence-only drafts, optional model generation, scoped revisions, version history, human approval, Obsidian write-back, Markdown export, Seedance auxiliary shots, and local finished-video rendering. See `docs/local_workspace_service.md` for privacy and storage boundaries.
 
 To enable external models, copy `.env.example` to `.env`, add only the provider keys you need, and restart the workspace. Keys and raw local materials are ignored by Git.
 
